@@ -2,8 +2,7 @@
 #  Database Configuration (PostgreSQL)
 # ===============================
 DB_URL=jdbc:postgresql://localhost:5432/bankingapi
-DB_USERNAME=yourusername
-DB_PASSWORD=yourpassword
+DB_USERNAME=your-username
+DB_PASSWORD=your-password
 
 
-SPRING_PROFILES_ACTIVE=dev
