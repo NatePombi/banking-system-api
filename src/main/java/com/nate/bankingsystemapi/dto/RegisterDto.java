@@ -11,6 +11,8 @@ import lombok.Setter;
 @Setter
 @Getter
 public class RegisterDto {
+    @NotBlank(message = "Full name cannot be empty")
+    private String fullName;
     @NotBlank(message = "Username cannot be empty")
     private String username;
     @NotBlank(message = "Email cannot be empty")

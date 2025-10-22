@@ -1,27 +1,24 @@
 package com.nate.bankingsystemapi.model;
 
 import jakarta.persistence.*;
-import jakarta.validation.constraints.NotBlank;
 import lombok.*;
-
 
 @Entity
 @Data
-@Getter
-@Setter
 @AllArgsConstructor
 @NoArgsConstructor
-@Table(name = "users")
-public class User {
+@Getter
+@Setter
+public class Transaction {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     @Column(nullable = false)
-    private String fullName;
-    @Column(unique = true,nullable = false)
-    private String username;
-    @Column(nullable = false)
-    private String password;
+    private Long amountCents;
+    @ManyToOne
+    private Account fromAccount;
+    @ManyToOne
+    private Account toAccount;
     @Enumerated(EnumType.STRING)
-    private Role role;
+    private Status status;
 }

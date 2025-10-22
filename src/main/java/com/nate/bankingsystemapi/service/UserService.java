@@ -43,9 +43,10 @@ public class UserService implements IUserService, UserDetailsService {
 
         //Creating User entity to store registered User
         User user = new User();
+        user.setFullName(registerDto.getFullName());
         user.setUsername(registerDto.getUsername());
         user.setPassword(encoder.encode(registerDto.getPassword()));
-        user.setRoles(Role.ADMIN);
+        user.setRole(Role.ADMIN);
 
         //Saves registered user
         log.debug("Saves the registered user entity into repo");
@@ -68,7 +69,7 @@ public class UserService implements IUserService, UserDetailsService {
         }
 
 
-        String token = JwtUtil.generateToken(customerDetails.getUsername(),customerDetails.getUser().getRoles());
+        String token = JwtUtil.generateToken(customerDetails.getUsername(),customerDetails.getUser().getRole());
 
         return new JwtResponse(token);
     }

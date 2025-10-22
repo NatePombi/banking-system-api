@@ -12,9 +12,10 @@ public class UserMapper {
 
         return new UserDto(
                 user.getId(),
+                user.getFullName(),
                 user.getUsername(),
                 user.getPassword(),
-                user.getRoles()
+                user.getRole()
         );
     }
 }
