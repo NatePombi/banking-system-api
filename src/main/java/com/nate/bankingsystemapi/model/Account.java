@@ -13,12 +13,12 @@ public class Account {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    @Column(nullable = false)
-    private Long balanceCent;
+    @Column(name = "balance_cents", nullable = false)
+    private Long balanceCents;
     @Column(nullable = false)
     private String currency;
     @ManyToOne
     private User user;
     @Version
-    private Integer integer;
+    private Integer version;
 }
