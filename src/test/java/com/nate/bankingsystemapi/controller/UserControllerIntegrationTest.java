@@ -38,12 +38,26 @@ public class UserControllerIntegrationTest {
     class Register {
         @Test
         void testRegister_Success() throws Exception {
-            RegisterDto reg = new RegisterDto("tester", "email", "test123");
+            RegisterDto reg = new RegisterDto("Tester","tester", "email", "test123");
 
             mvc.perform(post("/auth/register")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(mapper.writeValueAsString(reg)))
                     .andExpect(status().isCreated());
+        }
+
+        @Test
+        void testRegister_FailBadRequestNoFullName() throws Exception {
+
+            RegisterDto reg = new RegisterDto();
+            reg.setUsername("tester");
+            reg.setEmail("test@gmail.com");
+            reg.setPassword("test123");
+
+            mvc.perform(post("/auth/register")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(mapper.writeValueAsString(reg)))
+                    .andExpect(status().isBadRequest());
         }
 
         @Test
@@ -125,7 +139,7 @@ public class UserControllerIntegrationTest {
     }
 
     private void register() throws Exception {
-        RegisterDto reg = new RegisterDto("tester1", "email", "test123");
+        RegisterDto reg = new RegisterDto("Tester1","tester1", "email", "test123");
 
         mvc.perform(post("/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
