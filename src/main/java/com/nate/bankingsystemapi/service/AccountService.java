@@ -53,7 +53,7 @@ public class AccountService implements IAccountService {
 
         //Creating Account entity to store account details
         Account acc = new Account();
-        acc.setBalanceCents(postAccountDto.getBalanceCent());
+        acc.setBalance(postAccountDto.getBalance());
         acc.setCurrency(postAccountDto.getCurrency());
         acc.setUser(user);
 

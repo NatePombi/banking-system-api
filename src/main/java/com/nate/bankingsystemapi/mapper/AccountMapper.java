@@ -13,7 +13,7 @@ public class AccountMapper {
 
         return new AccountDto(
                 acc.getId(),
-                acc.getBalanceCents(),
+                acc.getBalance(),
                 acc.getCurrency(),
                 acc.getUser() !=null ? acc.getUser().getId(): null,
                 acc.getVersion()
@@ -27,7 +27,7 @@ public class AccountMapper {
 
         return new Account(
                 accDto.getId(),
-                accDto.getBalanceCent(),
+                accDto.getBalance(),
                 accDto.getCurrency(),
                 user,
                 accDto.getInteger()

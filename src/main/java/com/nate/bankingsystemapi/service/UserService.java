@@ -46,7 +46,7 @@ public class UserService implements IUserService, UserDetailsService {
         user.setFullName(registerDto.getFullName());
         user.setUsername(registerDto.getUsername());
         user.setPassword(encoder.encode(registerDto.getPassword()));
-        user.setRole(Role.ADMIN);
+        user.setRole(Role.USER);
 
         //Saves registered user
         log.debug("Saves the registered user entity into repo");

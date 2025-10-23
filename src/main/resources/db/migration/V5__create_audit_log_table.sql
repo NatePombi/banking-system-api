@@ -1,6 +1,7 @@
 CREATE TABLE audit_log (
                            id BIGSERIAL PRIMARY KEY,
-                           event VARCHAR(100),
-                           details TEXT,
+                           action VARCHAR(100) not null ,
+                            performed_by VARCHAR(100) NOT NULL ,
+                           details TEXT not null ,
                            created_at TIMESTAMP
 );
