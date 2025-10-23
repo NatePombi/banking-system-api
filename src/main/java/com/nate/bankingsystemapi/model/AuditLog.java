@@ -16,7 +16,10 @@ public class AuditLog {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     @Column(nullable = false)
-    private String event;
+    @Enumerated(EnumType.STRING)
+    private Action action;
+    @Column(name = "performed_by", nullable = false)
+    private String performedBy;
     @Column(nullable = false)
     private String details;
     private LocalDateTime createdAt = LocalDateTime.now();

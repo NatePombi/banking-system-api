@@ -13,7 +13,7 @@ import lombok.Setter;
 @Setter
 public class AccountDto {
     private Long id;
-    private Long balanceCent;
+    private Long balance;
     private String currency;
     private Long user;
     private Integer integer;
