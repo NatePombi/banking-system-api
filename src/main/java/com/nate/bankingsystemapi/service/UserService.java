@@ -50,10 +50,10 @@ public class UserService implements IUserService, UserDetailsService {
 
         //Saves registered user
         log.debug("Saves the registered user entity into repo");
-        repo.save(user);
+        User saved = repo.save(user);
 
         //Maps User entity to UserDto object using mapper
-        return UserMapper.toDto(user);
+        return UserMapper.toDto(saved);
     }
 
     @Override
