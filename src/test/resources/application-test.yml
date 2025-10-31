@@ -12,3 +12,5 @@ spring:
   sql:
     init:
       mode: always
+  flyway:
+    community-db-support-enabled: false

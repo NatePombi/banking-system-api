@@ -58,10 +58,10 @@ public class AccountService implements IAccountService {
         acc.setUser(user);
 
         //saves the account entity to repo
-        repo.save(acc);
+        Account saved = repo.save(acc);
 
         //Map Account entity to AccountDto object using mapper and return it
-        return AccountMapper.toDto(acc);
+        return AccountMapper.toDto(saved);
     }
 
     /**
