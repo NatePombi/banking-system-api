@@ -1,5 +1,6 @@
 package com.nate.bankingsystemapi.service;
 
+import com.nate.bankingsystemapi.dto.FundsRequest;
 import com.nate.bankingsystemapi.dto.TransactionDto;
 import com.nate.bankingsystemapi.exception.AccountNotFoundException;
 import com.nate.bankingsystemapi.exception.UserNotFoundException;
@@ -94,5 +95,66 @@ public class TransactionService implements ITransactionService {
 
         //map Transaction Entity to TransactionDto object using mapper
         return TransactionMapper.toDto(transaction);
+    }
+
+
+    @Transactional
+    @Override
+    public String depositFunds(FundsRequest req, String username) {
+
+        //fetching user by username, throws exception if not found
+        User user = repoU.findByUsername(username)
+                .orElseThrow(()-> new UserNotFoundException(username));
+
+        //Fetching Account by id, throws exception if not found
+        Account acc = repoA.findById(req.getAccountId())
+                .orElseThrow(()-> new AccountNotFoundException(req.getAccountId()));
+
+        //checks if user ownership, throws exception if user not owner
+        if(!acc.getUser().getId().equals(user.getId())){
+            throw new AccessDeniedException("Unauthorized Access");
+        }
+
+        //Performs the deposit
+        acc.setBalance(acc.getBalance() + req.getAmount());
+
+        //Saves updated account
+        repoA.save(acc);
+
+        //Returns Success message
+        return "Successfully Deposited " + req.getAmount() +" " + acc.getCurrency();
+    }
+
+    @Transactional
+    @Override
+    public String withdrawFunds(FundsRequest req, String username) {
+
+        //fetching user by username, throws exception if not found
+        User user = repoU.findByUsername(username)
+                .orElseThrow(()-> new UserNotFoundException(username));
+
+        //Fetching Account by id, throws exception if not found
+        Account acc = repoA.findById(req.getAccountId())
+                .orElseThrow(()-> new AccountNotFoundException(req.getAccountId()));
+
+        //checks if user ownership, throws exception if user not owner
+        if(!acc.getUser().getId().equals(user.getId())){
+            throw new AccessDeniedException("Unauthorized Access");
+        }
+
+
+        //Checks if amount is enough for withdraw, throws exception if amount insufficient
+        if(acc.getBalance() > req.getAmount()) {
+            //Performs the withdrawal
+            acc.setBalance(acc.getBalance() - req.getAmount());
+        }
+        else {
+            throw new IllegalArgumentException("Insufficient balance");
+        }
+        //Saves updated account
+        repoA.save(acc);
+
+        //Returns Success message
+        return "Successfully withdrew Funds " + req.getAmount() +" " + acc.getCurrency();
     }
 }

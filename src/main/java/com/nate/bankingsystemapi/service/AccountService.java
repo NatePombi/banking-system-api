@@ -1,6 +1,7 @@
 package com.nate.bankingsystemapi.service;
 
 import com.nate.bankingsystemapi.dto.AccountDto;
+import com.nate.bankingsystemapi.dto.FundsRequest;
 import com.nate.bankingsystemapi.dto.PostAccountDto;
 import com.nate.bankingsystemapi.exception.AccountNotFoundException;
 import com.nate.bankingsystemapi.exception.UserNotFoundException;
@@ -22,6 +23,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @AllArgsConstructor
@@ -143,6 +145,8 @@ public class AccountService implements IAccountService {
 
         return accountPage.map(AccountMapper::toDto);
     }
+
+
 
 
 }

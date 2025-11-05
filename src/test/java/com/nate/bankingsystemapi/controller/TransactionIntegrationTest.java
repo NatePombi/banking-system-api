@@ -2,6 +2,7 @@ package com.nate.bankingsystemapi.controller;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.nate.bankingsystemapi.dto.FundsRequest;
 import com.nate.bankingsystemapi.dto.TransferRequest;
 import com.nate.bankingsystemapi.model.Account;
 import com.nate.bankingsystemapi.model.Role;
@@ -10,6 +11,7 @@ import com.nate.bankingsystemapi.repository.AccountRepository;
 import com.nate.bankingsystemapi.repository.UserRepository;
 import com.nate.bankingsystemapi.util.JwtUtil;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -61,42 +63,164 @@ public class TransactionIntegrationTest {
         repoA.save(testAccount2);
     }
 
-    @Test
-    void testTransferFunds_Success() throws Exception {
-        TransferRequest dto = new TransferRequest(1L,2L,2000L);
+    @Nested
+    class Transfer {
+        @Test
+        void testTransferFunds_Success() throws Exception {
+            TransferRequest dto = new TransferRequest(1L, 2L, 2000L);
 
-        mvc.perform(post("/transaction/transfer")
-                .header("Authorization", "Bearer "+token)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(mapper.writeValueAsString(dto)))
-                .andExpect(status().isOk());
+            mvc.perform(post("/transaction/transfer")
+                            .header("Authorization", "Bearer " + token)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(mapper.writeValueAsString(dto)))
+                    .andExpect(status().isOk());
 
-        repoA.findById(1L).ifPresent(acc->{
-            assertEquals(8000L,acc.getBalance(),"Should have a decreased balance by transfer amount");
-        });
+            repoA.findById(1L).ifPresent(acc -> {
+                assertEquals(8000L, acc.getBalance(), "Should have a decreased balance by transfer amount");
+            });
 
-        repoA.findById(2L).ifPresent(acc->{
-            assertEquals(2000L,acc.getBalance(),"Should have an increased balance by transfer amount");
-        });
+            repoA.findById(2L).ifPresent(acc -> {
+                assertEquals(2000L, acc.getBalance(), "Should have an increased balance by transfer amount");
+            });
+        }
+
+        @Test
+        void testTransferFunds_Fail_InsufficientFunds() throws Exception {
+            TransferRequest dto = new TransferRequest(1L, 2L, 20000L);
+
+            mvc.perform(post("/transaction/transfer")
+                            .header("Authorization", "Bearer " + token)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(mapper.writeValueAsString(dto)))
+                    .andExpect(status().isBadRequest());
+
+            repoA.findById(1L).ifPresent(acc -> {
+                assertEquals(10000L, acc.getBalance(), "Funds should stay the same");
+            });
+
+            repoA.findById(2L).ifPresent(acc -> {
+                assertEquals(0L, acc.getBalance(), "funds should stay the same");
+            });
+        }
+
+
     }
 
-    @Test
-    void testTransferFunds_Fail_InsufficientFunds() throws Exception {
-        TransferRequest dto = new TransferRequest(1L,2L,20000L);
+    @Nested
+    class Deposit{
 
-        mvc.perform(post("/transaction/transfer")
-                        .header("Authorization", "Bearer "+token)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(mapper.writeValueAsString(dto)))
-                .andExpect(status().isBadRequest());
+        @Test
+        void testDepositFunds_Success() throws Exception {
+            Long amount = 2000L;
+            FundsRequest req = new FundsRequest(1L,amount);
+            mvc.perform(post("/transaction/deposit")
+                    .header("Authorization", "Bearer " + token)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(mapper.writeValueAsString(req)))
+                    .andExpect(status().isOk());
 
-        repoA.findById(1L).ifPresent(acc->{
-            assertEquals(10000L,acc.getBalance(),"Funds should stay the same");
-        });
+            repoA.findById(1L).ifPresent(acc ->{
+                assertEquals(testAccount1.getBalance() + amount, acc.getBalance(),"Current balance should be the sum of previous balance and the amount");
+            });
+        }
 
-        repoA.findById(2L).ifPresent(acc->{
-            assertEquals(0L,acc.getBalance(),"funds should stay the same");
-        });
+        @Test
+        void testDepositFunds_FailBadRequestNoAmount() throws Exception {
+            FundsRequest req = new FundsRequest(1L,null);
+
+            mvc.perform(post("/transaction/deposit")
+                    .header("Authorization", "Bearer " + token)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(mapper.writeValueAsString(req)))
+                    .andExpect(status().isBadRequest());
+        }
+
+
+        @Test
+        void testDepositFunds_FailBadRequestNoAccountId() throws Exception {
+            FundsRequest req = new FundsRequest(null,5000L);
+
+            mvc.perform(post("/transaction/deposit")
+                            .header("Authorization", "Bearer " + token)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(mapper.writeValueAsString(req)))
+                    .andExpect(status().isBadRequest());
+        }
+
+        @Test
+        void testDepositFuds_FailUnauthorized() throws Exception{
+            FundsRequest req = new FundsRequest(1L,5000L);
+
+            mvc.perform(post("/transaction/deposit")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(mapper.writeValueAsString(req)))
+                    .andExpect(status().isUnauthorized());
+
+        }
+    }
+
+    @Nested
+    class Withdraw{
+
+        @Test
+        void testWithdrawFunds_Success() throws Exception {
+            Long amount = 2000L;
+            FundsRequest req = new FundsRequest(1L,amount);
+            mvc.perform(post("/transaction/withdraw")
+                            .header("Authorization", "Bearer " + token)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(mapper.writeValueAsString(req)))
+                    .andExpect(status().isOk());
+
+            repoA.findById(1L).ifPresent(acc ->{
+                assertEquals(testAccount1.getBalance() - amount, acc.getBalance(),"Current balance should be the difference between the  previous balance and the amount");
+            });
+        }
+
+        @Test
+        void testWithdrawFunds_FailBadRequestInsufficientBalance() throws Exception {
+            FundsRequest req = new FundsRequest(1L,200000L);
+
+            mvc.perform(post("/transaction/withdraw")
+                            .header("Authorization", "Bearer " + token)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(mapper.writeValueAsString(req)))
+                    .andExpect(status().isBadRequest());
+        }
+
+        @Test
+        void testWithdrawFunds_FailBadRequestNoAmount() throws Exception {
+            FundsRequest req = new FundsRequest(1L,null);
+
+            mvc.perform(post("/transaction/withdraw")
+                            .header("Authorization", "Bearer " + token)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(mapper.writeValueAsString(req)))
+                    .andExpect(status().isBadRequest());
+        }
+
+
+        @Test
+        void testWithdrawFunds_FailBadRequestNoAccountId() throws Exception {
+            FundsRequest req = new FundsRequest(null,5000L);
+
+            mvc.perform(post("/transaction/withdraw")
+                            .header("Authorization", "Bearer " + token)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(mapper.writeValueAsString(req)))
+                    .andExpect(status().isBadRequest());
+        }
+
+        @Test
+        void testWithdrawFunds_FailUnauthorized() throws Exception{
+            FundsRequest req = new FundsRequest(1L,5000L);
+
+            mvc.perform(post("/transaction/withdraw")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(mapper.writeValueAsString(req)))
+                    .andExpect(status().isUnauthorized());
+
+        }
     }
 
 
