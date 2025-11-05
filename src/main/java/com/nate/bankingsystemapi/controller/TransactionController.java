@@ -1,5 +1,6 @@
 package com.nate.bankingsystemapi.controller;
 
+import com.nate.bankingsystemapi.dto.FundsRequest;
 import com.nate.bankingsystemapi.dto.TransactionDto;
 import com.nate.bankingsystemapi.dto.TransferRequest;
 import com.nate.bankingsystemapi.model.CustomerDetails;
@@ -40,5 +41,32 @@ public class TransactionController {
     @PostMapping("/transfer")
     public ResponseEntity<TransactionDto> transfer(@RequestBody @Valid TransferRequest request, @AuthenticationPrincipal CustomerDetails details){
         return ResponseEntity.ok().body(service.transfer(request.getFromAccount(), request.getToAccount(), request.getAmount(), details.getUsername() ));
+    }
+
+
+    @Operation(summary = "Deposit funds")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200",description = "Funds successfully deposited"),
+            @ApiResponse(responseCode = "400",description = "Bad Request"),
+            @ApiResponse(responseCode = "403",description = "Forbidden"),
+            @ApiResponse(responseCode = "404",description = "User not found"),
+            @ApiResponse(responseCode = "404", description = "Account Not found")
+    })
+    @PostMapping("/deposit")
+    public ResponseEntity<String> depositFunds(@RequestBody @Valid FundsRequest req, @AuthenticationPrincipal CustomerDetails details){
+        return ResponseEntity.ok().body(service.depositFunds(req, details.getUsername()));
+    }
+
+    @Operation(summary = "Withdraw funds")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200",description = "Funds successfully withdraw"),
+            @ApiResponse(responseCode = "400",description = "Bad Request"),
+            @ApiResponse(responseCode = "403",description = "Forbidden"),
+            @ApiResponse(responseCode = "404",description = "User not found"),
+            @ApiResponse(responseCode = "404", description = "Account Not found")
+    })
+    @PostMapping("/withdraw")
+    public ResponseEntity<String> withdrawFunds(@RequestBody @Valid FundsRequest req, @AuthenticationPrincipal CustomerDetails details){
+        return ResponseEntity.ok().body(service.withdrawFunds(req, details.getUsername()));
     }
 }

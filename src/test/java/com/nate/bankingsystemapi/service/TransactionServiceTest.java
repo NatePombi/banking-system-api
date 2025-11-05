@@ -1,5 +1,6 @@
 package com.nate.bankingsystemapi.service;
 
+import com.nate.bankingsystemapi.dto.FundsRequest;
 import com.nate.bankingsystemapi.dto.TransactionDto;
 import com.nate.bankingsystemapi.exception.AccountNotFoundException;
 import com.nate.bankingsystemapi.exception.UserNotFoundException;
@@ -129,6 +130,130 @@ public class TransactionServiceTest {
 
             assertThrows(IllegalArgumentException.class,()->{
                 service.transfer(1L,2L,40000L,"test");
+            });
+        }
+    }
+
+    @Nested
+    class Deposit{
+
+        @Test
+        void testDepositFunds_Success(){
+            Long amount = 4000L;
+            Long prevBalance = testAccount.getBalance();
+            FundsRequest req = new FundsRequest(1L,amount);
+            when(repoU.findByUsername("test")).thenReturn(Optional.of(testUser));
+            when(repoA.findById(1L)).thenReturn(Optional.of(testAccount));
+
+            service.depositFunds(req,"test");
+
+            assertEquals(amount + prevBalance, testAccount.getBalance(),"current balance should be the sum of previous balance and amount deposited");
+            verify(repoA,times(1)).save(any(Account.class));
+        }
+
+        @Test
+        void testDepositFunds_FailUserNotFound(){
+            FundsRequest req = new FundsRequest(1L,3000L);
+            Exception ex = assertThrows(UserNotFoundException.class,()->{
+                service.depositFunds(req,"test");
+            });
+
+            assertTrue(ex.getMessage().contains("test"));
+        }
+
+        @Test
+        void testDepositFunds_FailAccountNotFound(){
+            FundsRequest req = new FundsRequest(1L,3000L);
+            when(repoU.findByUsername("test")).thenReturn(Optional.of(testUser));
+
+            Exception ex = assertThrows(AccountNotFoundException.class,()->{
+                service.depositFunds(req,"test");
+            });
+
+            assertTrue(ex.getMessage().contains("1"));
+        }
+
+        @Test
+        void testDepositFund_FailAccessDenied(){
+            User user = new User();
+            user.setId(22L);
+            user.setUsername("mark");
+            FundsRequest req = new FundsRequest(1L,3000L);
+            when(repoU.findByUsername("mark")).thenReturn(Optional.of(user));
+            when(repoA.findById(1L)).thenReturn(Optional.of(testAccount));
+            assertThrows(AccessDeniedException.class,()->{
+                service.depositFunds(req,"mark");
+            });
+        }
+    }
+
+
+    @Nested
+    class Withdraw{
+
+        @Test
+        void testWithdrawFunds_Success(){
+            Long amount = 2000L;
+            Long prevBalance = testAccount.getBalance();
+            FundsRequest req = new FundsRequest(1L,amount);
+            when(repoU.findByUsername("test")).thenReturn(Optional.of(testUser));
+            when(repoA.findById(1L)).thenReturn(Optional.of(testAccount));
+
+            service.withdrawFunds(req,"test");
+
+            assertEquals(prevBalance - amount,testAccount.getBalance(),"the current balance should be the difference between the previous balance and the amount");
+            verify(repoA,times(1)).save(any(Account.class));
+        }
+
+
+        @Test
+        void testWithdrawFunds_FailInsufficientFunds(){
+            FundsRequest req = new FundsRequest(1L,20000L);
+
+            when(repoU.findByUsername("test")).thenReturn(Optional.of(testUser));
+            when(repoA.findById(1L)).thenReturn(Optional.of(testAccount));
+
+            assertThrows(IllegalArgumentException.class,()->{
+                service.withdrawFunds(req,"test");
+            });
+        }
+
+
+        @Test
+        void testWithdrawFunds_FailUserNotFound(){
+            FundsRequest req = new FundsRequest(1L,2000L);
+
+            Exception ex = assertThrows(UserNotFoundException.class, ()->{
+                service.withdrawFunds(req,"test");
+            });
+
+            assertTrue(ex.getMessage().contains("test"));
+        }
+
+
+        @Test
+        void testWithdrawFunds_FailAccountNotFound(){
+            FundsRequest req = new FundsRequest(1L,2000L);
+            when(repoU.findByUsername("test")).thenReturn(Optional.of(testUser));
+
+            Exception ex = assertThrows(AccountNotFoundException.class, ()->{
+                service.withdrawFunds(req,"test");
+            });
+
+            assertTrue(ex.getMessage().contains("1"));
+        }
+
+
+        @Test
+        void testWithdrawFund_FailAccessDenied(){
+            User user = new User();
+            user.setId(22L);
+            user.setUsername("mark");
+            FundsRequest req = new FundsRequest(1L,3000L);
+            when(repoU.findByUsername("mark")).thenReturn(Optional.of(user));
+            when(repoA.findById(1L)).thenReturn(Optional.of(testAccount));
+            assertThrows(AccessDeniedException.class,()->{
+                service.withdrawFunds(req,"mark");
             });
         }
     }

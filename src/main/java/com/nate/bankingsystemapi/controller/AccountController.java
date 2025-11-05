@@ -1,6 +1,7 @@
 package com.nate.bankingsystemapi.controller;
 
 import com.nate.bankingsystemapi.dto.AccountDto;
+import com.nate.bankingsystemapi.dto.FundsRequest;
 import com.nate.bankingsystemapi.dto.PaginatedResponse;
 import com.nate.bankingsystemapi.dto.PostAccountDto;
 import com.nate.bankingsystemapi.model.CustomerDetails;
@@ -74,4 +75,5 @@ public class AccountController {
 
         return ResponseEntity.ok().body(response);
     }
+
 }

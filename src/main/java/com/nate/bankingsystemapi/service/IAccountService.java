@@ -1,6 +1,7 @@
 package com.nate.bankingsystemapi.service;
 
 import com.nate.bankingsystemapi.dto.AccountDto;
+import com.nate.bankingsystemapi.dto.FundsRequest;
 import com.nate.bankingsystemapi.dto.PostAccountDto;
 import org.springframework.data.domain.Page;
 
