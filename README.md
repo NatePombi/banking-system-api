@@ -1,4 +1,4 @@
-# Inventory Management System API
+# Banking System API
 
 ![Java CI](https://github.com/NatePombi/banking-system-api/actions/workflows/test.yml/badge.svg)
 [![codecov](https://codecov.io/gh/NatePombi/banking-system-api/branch/master/graph/badge.svg?token=YOUR_TOKEN)](https://codecov.io/gh/NatePombi/banking-system-api)
