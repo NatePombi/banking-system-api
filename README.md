@@ -140,3 +140,95 @@ DB_PASSWORD=yourpassword
 - This project is actively maintained and open for improvements and contributions.
 
 ---
+
+### API Usage 
+
+This section explains how to interact with the Banking System API, including available endpoints, request examples, and how to view live API documentation via Swagger UI.
+
+#### Base URl
+- http://localhost:8080
+
+### Endpoints Overview
+
+| Method | Endpoints      | Description       |
+|--------|----------------|-------------------|
+| Post   | /auth/register | Register new User |
+| Post   | /auth/login    | Logs in User       |
+|Post    | /account       | Creates new account|
+ |Get    | /account/{id}  | Gets account by id |
+ | Get   | /account       | Retrieves a paginated list of accounts (for the Authenticated user|
+  | Post | /transaction/transfer| Transfers funds between accounts |
+ | Post  | /transaction/deposit| Deposits funds in account|
+ | Post  | /transaction/withdraw| Withdraw funds from account
+
+### Sample API calls
+
+Register User
+**POST** `/auth/register`
+```json
+{
+  "fullName": "John Doe",
+  "username": "john123",
+  "email": "eail@gmail.com",
+  "password": "john123"
+}
+```
+
+Login User
+**POST** `/auth/login`
+```json
+{
+  "username": "john123",
+  "password": "john123"
+}
+
+```
+
+Create Account
+**POST** `/account`
+```json
+{
+  "balance": 0,
+  "currency": "USD"
+}
+```
+
+Response:
+```json
+{
+  "id": 1,
+  "balance": 0,
+  "currency": "USD",
+  "user": 2,
+  "integer": 0
+}
+```
+
+Transfer Funds
+**POST** `/transaction/transfer`
+```json
+{
+  "fromAccount": 3,
+  "toAccount": 4,
+  "amount": 100
+}
+```
+
+Response:
+```json
+{
+  "id": 3,
+  "amount": 100,
+  "fromAccount": 3,
+  "toAccount": 4,
+  "status": "SUCCESS"
+}
+```
+
+---
+
+### Postman Collection
+
+You can import the full Postman collection to test the API:
+
+[📥 Download Postman Collection](./.docs/postman_collection.json)
