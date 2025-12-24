@@ -4,15 +4,15 @@ import com.nate.bankingsystemapi.dto.FundsRequest;
 import com.nate.bankingsystemapi.dto.TransactionDto;
 import com.nate.bankingsystemapi.dto.TransferRequest;
 import com.nate.bankingsystemapi.model.CustomerDetails;
-import com.nate.bankingsystemapi.model.Transaction;
 import com.nate.bankingsystemapi.service.ITransactionService;
+import com.nate.bankingsystemapi.util.RetryHelper;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
-import lombok.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -28,8 +28,6 @@ public class TransactionController {
 
     private final ITransactionService service;
 
-
-
     @Operation(summary = "Transferring funds")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200",description = "Funds successfully transferred"),
@@ -39,8 +37,13 @@ public class TransactionController {
             @ApiResponse(responseCode = "404", description = "Account Not found")
     })
     @PostMapping("/transfer")
-    public ResponseEntity<TransactionDto> transfer(@RequestBody @Valid TransferRequest request, @AuthenticationPrincipal CustomerDetails details){
-        return ResponseEntity.ok().body(service.transfer(request.getFromAccount(), request.getToAccount(), request.getAmount(), details.getUsername() ));
+    public ResponseEntity<TransactionDto> transfer(@RequestBody @Valid TransferRequest request, @AuthenticationPrincipal CustomerDetails details) throws Exception {
+           return RetryHelper.retryOnLock(
+                   ()-> ResponseEntity.ok().body(service.transfer(request.getFromAccount(), request.getToAccount(), request.getAmount(), details.getUsername(), request.getRequestID())),
+                   3
+           );
+
+
     }
 
 
@@ -53,8 +56,12 @@ public class TransactionController {
             @ApiResponse(responseCode = "404", description = "Account Not found")
     })
     @PostMapping("/deposit")
-    public ResponseEntity<String> depositFunds(@RequestBody @Valid FundsRequest req, @AuthenticationPrincipal CustomerDetails details){
-        return ResponseEntity.ok().body(service.depositFunds(req, details.getUsername()));
+    public ResponseEntity<String> depositFunds(@RequestBody @Valid FundsRequest req, @AuthenticationPrincipal CustomerDetails details) throws Exception {
+           return RetryHelper.retryOnLock(
+                   () -> ResponseEntity.ok(service.depositFunds(req,details.getUsername())),
+                   3
+           );
+
     }
 
     @Operation(summary = "Withdraw funds")
@@ -66,7 +73,10 @@ public class TransactionController {
             @ApiResponse(responseCode = "404", description = "Account Not found")
     })
     @PostMapping("/withdraw")
-    public ResponseEntity<String> withdrawFunds(@RequestBody @Valid FundsRequest req, @AuthenticationPrincipal CustomerDetails details){
-        return ResponseEntity.ok().body(service.withdrawFunds(req, details.getUsername()));
+    public ResponseEntity<String> withdrawFunds(@RequestBody @Valid FundsRequest req, @AuthenticationPrincipal CustomerDetails details) throws Exception {
+            return RetryHelper.retryOnLock(
+                    () -> ResponseEntity.ok().body(service.withdrawFunds(req, details.getUsername())),
+                    3
+            );
     }
 }

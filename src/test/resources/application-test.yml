@@ -1,16 +1,30 @@
+debug: false
+
 spring:
   datasource:
-    url: jdbc:h2:mem:testdb;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1
-    driver-class-name: org.h2.Driver
-    username: sa
-    password:
+    url: jdbc:postgresql://localhost:5432/bankingapitest
+    driver-class-name: org.postgresql.Driver
+    username: postgres
+    password: Masoko
+
   jpa:
     hibernate:
       ddl-auto: create-drop
-      database-platform: org.hibernate.dialect.H2Dialect
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
     show-sql: true
-  sql:
-    init:
-      mode: always
+    properties:
+      hibernate:
+        format_sql: true
+        c3p0:
+          timeout: 3
+
   flyway:
     community-db-support-enabled: false
+
+logging:
+  level:
+    root: INFO
+    org.springframework.boot.autoconfigure: INFO
+    org.springframework.context.annotation: WARN
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE

@@ -13,7 +13,7 @@ import lombok.Setter;
 @NoArgsConstructor
 @Getter
 @Setter
-@Schema(description = "Accoun Creation Request")
+@Schema(description = "Account Creation Request")
 public class PostAccountDto {
     @NotNull
     @Min(0)

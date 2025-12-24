@@ -19,4 +19,8 @@ public class FundsRequest {
     @NotNull(message = "Amount cannot be empty")
     @Min(0)
     private Long amount;
+    @Schema(description = "Unique UUID to prevent duplicate requests")
+    @NotNull(message = "Missing UUID")
+    private String requestID;
+
 }

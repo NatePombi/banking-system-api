@@ -56,8 +56,8 @@ public class TransactionIntegrationTest {
 
         token = JwtUtil.generateToken(testUser.getUsername(),testUser.getRole());
 
-         testAccount1 = new Account(null,10000L,"USD",testUser,0);
-         testAccount2 = new Account(null,0L,"USD",testUser,0);
+         testAccount1 = new Account(null,10000L,"USD",testUser);
+         testAccount2 = new Account(null,0L,"USD",testUser);
 
         repoA.save(testAccount1);
         repoA.save(testAccount2);
@@ -67,7 +67,7 @@ public class TransactionIntegrationTest {
     class Transfer {
         @Test
         void testTransferFunds_Success() throws Exception {
-            TransferRequest dto = new TransferRequest(1L, 2L, 2000L);
+            TransferRequest dto = new TransferRequest(1L, 2L, 2000L,"UUID12");
 
             mvc.perform(post("/transaction/transfer")
                             .header("Authorization", "Bearer " + token)
@@ -86,7 +86,7 @@ public class TransactionIntegrationTest {
 
         @Test
         void testTransferFunds_Fail_InsufficientFunds() throws Exception {
-            TransferRequest dto = new TransferRequest(1L, 2L, 20000L);
+            TransferRequest dto = new TransferRequest(1L, 2L, 20000L,"UUID12");
 
             mvc.perform(post("/transaction/transfer")
                             .header("Authorization", "Bearer " + token)
@@ -112,7 +112,7 @@ public class TransactionIntegrationTest {
         @Test
         void testDepositFunds_Success() throws Exception {
             Long amount = 2000L;
-            FundsRequest req = new FundsRequest(1L,amount);
+            FundsRequest req = new FundsRequest(1L,amount,"UUID13");
             mvc.perform(post("/transaction/deposit")
                     .header("Authorization", "Bearer " + token)
                     .contentType(MediaType.APPLICATION_JSON)
@@ -126,7 +126,7 @@ public class TransactionIntegrationTest {
 
         @Test
         void testDepositFunds_FailBadRequestNoAmount() throws Exception {
-            FundsRequest req = new FundsRequest(1L,null);
+            FundsRequest req = new FundsRequest(1L,null,"UUID13");
 
             mvc.perform(post("/transaction/deposit")
                     .header("Authorization", "Bearer " + token)
@@ -135,10 +135,21 @@ public class TransactionIntegrationTest {
                     .andExpect(status().isBadRequest());
         }
 
+        @Test
+        void testDepositFunds_FailBadRequestNoRequestID() throws Exception {
+            FundsRequest req = new FundsRequest(1L,10L,null);
+
+            mvc.perform(post("/transaction/deposit")
+                            .header("Authorization", "Bearer " + token)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(mapper.writeValueAsString(req)))
+                    .andExpect(status().isBadRequest());
+        }
+
 
         @Test
         void testDepositFunds_FailBadRequestNoAccountId() throws Exception {
-            FundsRequest req = new FundsRequest(null,5000L);
+            FundsRequest req = new FundsRequest(null,5000L,"UUID13");
 
             mvc.perform(post("/transaction/deposit")
                             .header("Authorization", "Bearer " + token)
@@ -149,7 +160,7 @@ public class TransactionIntegrationTest {
 
         @Test
         void testDepositFuds_FailUnauthorized() throws Exception{
-            FundsRequest req = new FundsRequest(1L,5000L);
+            FundsRequest req = new FundsRequest(1L,5000L,"UUID13");
 
             mvc.perform(post("/transaction/deposit")
                             .contentType(MediaType.APPLICATION_JSON)
@@ -165,7 +176,7 @@ public class TransactionIntegrationTest {
         @Test
         void testWithdrawFunds_Success() throws Exception {
             Long amount = 2000L;
-            FundsRequest req = new FundsRequest(1L,amount);
+            FundsRequest req = new FundsRequest(1L,amount,"UUID13");
             mvc.perform(post("/transaction/withdraw")
                             .header("Authorization", "Bearer " + token)
                             .contentType(MediaType.APPLICATION_JSON)
@@ -179,7 +190,7 @@ public class TransactionIntegrationTest {
 
         @Test
         void testWithdrawFunds_FailBadRequestInsufficientBalance() throws Exception {
-            FundsRequest req = new FundsRequest(1L,200000L);
+            FundsRequest req = new FundsRequest(1L,200000L,"UUID13");
 
             mvc.perform(post("/transaction/withdraw")
                             .header("Authorization", "Bearer " + token)
@@ -190,7 +201,18 @@ public class TransactionIntegrationTest {
 
         @Test
         void testWithdrawFunds_FailBadRequestNoAmount() throws Exception {
-            FundsRequest req = new FundsRequest(1L,null);
+            FundsRequest req = new FundsRequest(1L,null,"UUID13");
+
+            mvc.perform(post("/transaction/withdraw")
+                            .header("Authorization", "Bearer " + token)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(mapper.writeValueAsString(req)))
+                    .andExpect(status().isBadRequest());
+        }
+
+        @Test
+        void testWithdrawFunds_FailBadRequestNoRequestID() throws Exception {
+            FundsRequest req = new FundsRequest(1L,10L,null);
 
             mvc.perform(post("/transaction/withdraw")
                             .header("Authorization", "Bearer " + token)
@@ -202,7 +224,7 @@ public class TransactionIntegrationTest {
 
         @Test
         void testWithdrawFunds_FailBadRequestNoAccountId() throws Exception {
-            FundsRequest req = new FundsRequest(null,5000L);
+            FundsRequest req = new FundsRequest(null,5000L,"UUID13");
 
             mvc.perform(post("/transaction/withdraw")
                             .header("Authorization", "Bearer " + token)
@@ -213,7 +235,7 @@ public class TransactionIntegrationTest {
 
         @Test
         void testWithdrawFunds_FailUnauthorized() throws Exception{
-            FundsRequest req = new FundsRequest(1L,5000L);
+            FundsRequest req = new FundsRequest(1L,5000L,"UUID13");
 
             mvc.perform(post("/transaction/withdraw")
                             .contentType(MediaType.APPLICATION_JSON)
