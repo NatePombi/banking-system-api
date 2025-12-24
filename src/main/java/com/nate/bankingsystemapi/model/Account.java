@@ -5,8 +5,6 @@ import jakarta.validation.constraints.Min;
 import lombok.*;
 
 @Entity
-@Getter
-@Setter
 @AllArgsConstructor
 @NoArgsConstructor
 @Data
@@ -19,8 +17,7 @@ public class Account {
     private Long balance;
     @Column(nullable = false)
     private String currency;
-    @ManyToOne
+    @ManyToOne(optional = false)
     private User user;
-    @Version
-    private Integer version;
+
 }

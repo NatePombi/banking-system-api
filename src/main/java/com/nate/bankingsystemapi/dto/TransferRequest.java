@@ -25,4 +25,8 @@ public class TransferRequest {
     @Schema(description = "The amount that's being transferred")
     @Min(1)
     private Long amount;
+    @Schema(description = "Unique UUID to prevent duplicate requests")
+    @NotNull(message = "Missing UUID")
+    private String requestID;
+
 }

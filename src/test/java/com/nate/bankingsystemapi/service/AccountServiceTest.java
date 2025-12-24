@@ -44,7 +44,7 @@ public class AccountServiceTest {
     @BeforeEach
     void startUp(){
         testUser = new User(1L,"Tester","test","hash-pass", Role.USER);
-        testAccount = new Account(2L,40000L,"ZAR", testUser,0);
+        testAccount = new Account(2L,40000L,"ZAR", testUser);
         testPost = new PostAccountDto(40000L,"ZAR");
 
     }

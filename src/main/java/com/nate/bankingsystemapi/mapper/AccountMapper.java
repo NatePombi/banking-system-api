@@ -15,8 +15,7 @@ public class AccountMapper {
                 acc.getId(),
                 acc.getBalance(),
                 acc.getCurrency(),
-                acc.getUser() !=null ? acc.getUser().getId(): null,
-                acc.getVersion()
+                acc.getUser() !=null ? acc.getUser().getId(): null
         );
     }
 
@@ -29,8 +28,7 @@ public class AccountMapper {
                 accDto.getId(),
                 accDto.getBalance(),
                 accDto.getCurrency(),
-                user,
-                accDto.getInteger()
+                user
         );
     }
 }

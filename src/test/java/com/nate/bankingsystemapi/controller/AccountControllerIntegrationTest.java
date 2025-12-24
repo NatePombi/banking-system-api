@@ -58,7 +58,7 @@ public class AccountControllerIntegrationTest {
         tokenTestUser = JwtUtil.generateToken(testUser.getUsername(),testUser.getRole());
         tokenAdminUser = JwtUtil.generateToken(adminUser.getUsername(),adminUser.getRole());
 
-        Account testAccount = new Account(null,20000L,"ZAR",testUser,0);
+        Account testAccount = new Account(null,20000L,"ZAR",testUser);
         repoA.save(testAccount);
 
     }
@@ -71,9 +71,9 @@ public class AccountControllerIntegrationTest {
             PostAccountDto dto = new PostAccountDto(1000L,"USD");
 
             mvc.perform(post("/account")
-                    .header("Authorization", "Bearer " + tokenTestUser)
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(mapper.writeValueAsString(dto)))
+                            .header("Authorization", "Bearer " + tokenTestUser)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(mapper.writeValueAsString(dto)))
                     .andExpect(status().isCreated())
                     .andExpect(jsonPath("$.balance").value(1000L))
                     .andExpect(jsonPath("$.currency").value("USD"));
@@ -125,7 +125,7 @@ public class AccountControllerIntegrationTest {
         @Test
         void testGetById_Success() throws Exception {
             mvc.perform(get("/account/1")
-                    .header("Authorization", "Bearer " + tokenTestUser))
+                            .header("Authorization", "Bearer " + tokenTestUser))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.balance").value(20000L))
                     .andExpect(jsonPath("$.currency").value("ZAR"));
@@ -165,7 +165,7 @@ public class AccountControllerIntegrationTest {
                             .param("size","5")
                             .param("sortBy","id")
                             .param("direction","desc")
-                    .header("Authorization", "Bearer "+tokenTestUser))
+                            .header("Authorization", "Bearer "+tokenTestUser))
                     .andExpect(status().isOk());
         }
 
