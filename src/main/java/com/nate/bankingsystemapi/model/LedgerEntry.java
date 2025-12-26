@@ -16,6 +16,7 @@ public class LedgerEntry {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     @ManyToOne(optional = false)
+    @JoinColumn(name = "account_id", nullable = false)
     private Account account;
     @Column(nullable = false)
     private Long amount;
@@ -24,7 +25,8 @@ public class LedgerEntry {
     @Enumerated(EnumType.STRING)
     private Action action;
     @ManyToOne(optional = false)
-    private Transaction transaction;
+    @JoinColumn(name = "transaction_id", nullable = false)
+    private Transactions transactions;
     @Column(nullable = false)
     private Instant createAt;
 
