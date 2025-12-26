@@ -15,7 +15,6 @@ import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
-import java.time.LocalDateTime;
 import java.util.Optional;
 
 @Service
@@ -38,38 +37,38 @@ public class TransactionService implements ITransactionService {
                 .orElseThrow(() -> new UserNotFoundException(username));
 
         //Create Transaction Record
-        Transaction transaction = new Transaction();
-        transaction.setAmount(amount);
-        transaction.setStatus(Status.PENDING);
-        transaction.setRequestID(reqId);
-        transaction.setInstant(Instant.now());
-        transaction.setAction(Action.TRANSFER);
-        transaction.setUsername(username);
+        Transactions transactions = new Transactions();
+        transactions.setAmount(amount);
+        transactions.setStatus(Status.PENDING);
+        transactions.setRequestID(reqId);
+        transactions.setInstant(Instant.now());
+        transactions.setAction(Action.TRANSFER);
+        transactions.setUsername(username);
 
         try{
-            repo.save(transaction);
+            repo.save(transactions);
         }
         catch (DataIntegrityViolationException e){
-            Optional<Transaction> existing = repo.findByRequestIDAndUsername(reqId, username);
+            Optional<Transactions> existing = repo.findByRequestIDAndUsername(reqId, username);
             return TransactionMapper.toDto(existing.get());
         }
 
         //Checks if transferring to the same account, throws exception if you are
         if (fromId == null || toId == null) {
-            transaction.setStatus(Status.FAILED);
-            repo.save(transaction);
+            transactions.setStatus(Status.FAILED);
+            repo.save(transactions);
             throw new IllegalArgumentException("Account ids must be provided");
         }
 
         if(fromId.equals(toId)){
-            transaction.setStatus(Status.FAILED);
-            repo.save(transaction);
+            transactions.setStatus(Status.FAILED);
+            repo.save(transactions);
             throw new IllegalArgumentException("Cannot Transfer to the same account");
         }
 
         if (amount == null || amount <= 0) {
-            transaction.setStatus(Status.FAILED);
-            repo.save(transaction);
+            transactions.setStatus(Status.FAILED);
+            repo.save(transactions);
             throw new IllegalArgumentException("Amount must be > 0");
         }
 
@@ -97,8 +96,8 @@ public class TransactionService implements ITransactionService {
 
         //Checks if balance is enough for transfer
         if(fromAccount.getBalance()< amount){
-            transaction.setStatus(Status.FAILED);
-            repo.save(transaction);
+            transactions.setStatus(Status.FAILED);
+            repo.save(transactions);
             throw new IllegalArgumentException("Insufficient Balance");
         }
 
@@ -106,14 +105,14 @@ public class TransactionService implements ITransactionService {
         fromAccount.setBalance(fromAccount.getBalance() - amount);
         toAccount.setBalance(toAccount.getBalance() + amount);
 
-       transaction.setFromAccount(fromAccount);
-       transaction.setToAccount(toAccount);
-       transaction.setStatus(Status.SUCCESS);
-        transaction = repo.save(transaction);
+       transactions.setFromAccount(fromAccount);
+       transactions.setToAccount(toAccount);
+       transactions.setStatus(Status.SUCCESS);
+        transactions = repo.save(transactions);
 
         //Create Ledger Entries
-       recordDebit(fromAccount,amount,transaction,Action.TRANSFER);
-        recordCredit(toAccount,amount,transaction,Action.TRANSFER);
+       recordDebit(fromAccount,amount, transactions,Action.TRANSFER);
+        recordCredit(toAccount,amount, transactions,Action.TRANSFER);
 
 
         //Create Audit log record
@@ -125,7 +124,7 @@ public class TransactionService implements ITransactionService {
 
 
         //map Transaction Entity to TransactionDto object using mapper
-        return TransactionMapper.toDto(transaction);
+        return TransactionMapper.toDto(transactions);
     }
 
 
@@ -138,16 +137,16 @@ public class TransactionService implements ITransactionService {
                 .orElseThrow(()-> new UserNotFoundException(username));
 
         //Create transaction (Idempotency gate)
-        Transaction transaction = new Transaction();
-        transaction.setAction(Action.DEPOSIT);
-        transaction.setInstant(Instant.now());
-        transaction.setAmount(req.getAmount());
-        transaction.setStatus(Status.PENDING);
-        transaction.setUsername(username);
-        transaction.setRequestID(req.getRequestID());
+        Transactions transactions = new Transactions();
+        transactions.setAction(Action.DEPOSIT);
+        transactions.setInstant(Instant.now());
+        transactions.setAmount(req.getAmount());
+        transactions.setStatus(Status.PENDING);
+        transactions.setUsername(username);
+        transactions.setRequestID(req.getRequestID());
 
         try{
-            repo.saveAndFlush(transaction);
+            repo.saveAndFlush(transactions);
         }
         catch (DataIntegrityViolationException e){
             return "Request already processed";
@@ -159,8 +158,8 @@ public class TransactionService implements ITransactionService {
 
         //checks if user ownership, throws exception if user not owner
         if(!acc.getUser().getId().equals(user.getId())){
-            transaction.setStatus(Status.FAILED);
-            repo.save(transaction);
+            transactions.setStatus(Status.FAILED);
+            repo.save(transactions);
             throw new AccessDeniedException("Unauthorized Access");
         }
 
@@ -169,12 +168,12 @@ public class TransactionService implements ITransactionService {
         //Performs the deposit
         acc.setBalance(acc.getBalance() + req.getAmount());
 
-        transaction.setToAccount(acc);
-        transaction.setStatus(Status.SUCCESS);
-        repo.save(transaction);
+        transactions.setToAccount(acc);
+        transactions.setStatus(Status.SUCCESS);
+        repo.save(transactions);
 
         //save to Ledger
-        recordCredit(acc, req.getAmount(),transaction,Action.DEPOSIT);
+        recordCredit(acc, req.getAmount(), transactions,Action.DEPOSIT);
 
         //Returns Success message
         return "Successfully Deposited " + req.getAmount() +" " + acc.getCurrency();
@@ -189,16 +188,16 @@ public class TransactionService implements ITransactionService {
                 .orElseThrow(()-> new UserNotFoundException(username));
 
         // Creating transaction (Idempotency gate)
-        Transaction transaction = new Transaction();
-        transaction.setRequestID(req.getRequestID());
-        transaction.setInstant(Instant.now());
-        transaction.setStatus(Status.PENDING);
-        transaction.setAction(Action.WITHDRAW);
-        transaction.setAmount(req.getAmount());
-        transaction.setUsername(username);
+        Transactions transactions = new Transactions();
+        transactions.setRequestID(req.getRequestID());
+        transactions.setInstant(Instant.now());
+        transactions.setStatus(Status.PENDING);
+        transactions.setAction(Action.WITHDRAW);
+        transactions.setAmount(req.getAmount());
+        transactions.setUsername(username);
 
         try{
-            repo.saveAndFlush(transaction);
+            repo.saveAndFlush(transactions);
         }catch (DataIntegrityViolationException e){
             return "Request already processed";
         }
@@ -209,16 +208,16 @@ public class TransactionService implements ITransactionService {
 
         //checks if user ownership, throws exception if user not owner
         if(!acc.getUser().getId().equals(user.getId())){
-            transaction.setStatus(Status.FAILED);
-            repo.save(transaction);
+            transactions.setStatus(Status.FAILED);
+            repo.save(transactions);
             throw new AccessDeniedException("Unauthorized Access");
         }
 
 
         //Checks if amount is enough for withdraw, throws exception if amount insufficient
         if(acc.getBalance() < req.getAmount()) {
-            transaction.setStatus(Status.FAILED);
-            repo.save(transaction);
+            transactions.setStatus(Status.FAILED);
+            repo.save(transactions);
             throw new IllegalArgumentException("Insufficient balance");
         }
 
@@ -226,34 +225,34 @@ public class TransactionService implements ITransactionService {
         acc.setBalance(acc.getBalance() - req.getAmount());
 
 
-        transaction.setStatus(Status.SUCCESS);
-        transaction.setFromAccount(acc);
-        repo.save(transaction);
+        transactions.setStatus(Status.SUCCESS);
+        transactions.setFromAccount(acc);
+        repo.save(transactions);
 
         //save to Ledger
-        recordDebit(acc, req.getAmount(),transaction,Action.WITHDRAW);
+        recordDebit(acc, req.getAmount(), transactions,Action.WITHDRAW);
 
         //Returns Success message
         return "Successfully withdrew Funds " + req.getAmount() +" " + acc.getCurrency();
     }
 
-    private void recordDebit(Account acc, Long amount, Transaction transaction,Action action) {
+    private void recordDebit(Account acc, Long amount, Transactions transactions, Action action) {
         LedgerEntry debit = new LedgerEntry();
         debit.setAccount(acc);
         debit.setAmount(amount);
         debit.setType(Type.DEBIT);
-        debit.setTransaction(transaction);
+        debit.setTransactions(transactions);
         debit.setAction(action);
         debit.setCreateAt(Instant.now());
         repoT.save(debit);
     }
 
-    private void recordCredit(Account acc, Long amount, Transaction transaction,Action action) {
+    private void recordCredit(Account acc, Long amount, Transactions transactions, Action action) {
         LedgerEntry debit = new LedgerEntry();
         debit.setAccount(acc);
         debit.setAmount(amount);
         debit.setType(Type.CREDIT);
-        debit.setTransaction(transaction);
+        debit.setTransactions(transactions);
         debit.setAction(action);
         debit.setCreateAt(Instant.now());
         repoT.save(debit);

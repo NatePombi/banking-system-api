@@ -6,7 +6,6 @@ import com.nate.bankingsystemapi.exception.AccountNotFoundException;
 import com.nate.bankingsystemapi.exception.UserNotFoundException;
 import com.nate.bankingsystemapi.model.*;
 import com.nate.bankingsystemapi.repository.*;
-import org.hibernate.mapping.Any;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -23,7 +22,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-public class TransactionServiceTest {
+public class TransactionsServiceTest {
     @Mock
     private TransactionRepository repoT;
     @Mock
@@ -57,7 +56,7 @@ public class TransactionServiceTest {
             when(repoU.findByUsername("test")).thenReturn(Optional.of(testUser));
             when(repoA.findByIdForUpdate(1L)).thenReturn(Optional.of(testAccount));
             when(repoA.findByIdForUpdate(2L)).thenReturn(Optional.of(testAccount2));
-            when(repoT.save(any(Transaction.class))).thenAnswer(invocation -> invocation.getArgument(0));
+            when(repoT.save(any(Transactions.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
             TransactionDto dto = service.transfer(1L, 2L, 5000L, "test","UUID1");
 
@@ -65,7 +64,7 @@ public class TransactionServiceTest {
             assertEquals(5000L, testAccount.getBalance(), "should decreased by the amount transferred");
             assertEquals(5000L, testAccount2.getBalance(), "should be increased by amount transferred");
 
-            verify(repoT, atLeast(1)).save(any(Transaction.class));
+            verify(repoT, atLeast(1)).save(any(Transactions.class));
             verify(repoAL).save(any(AuditLog.class));
             verify(repoL, times(2)).save(any(LedgerEntry.class));
         }

@@ -10,15 +10,23 @@ Supports account management, money transfers, ledger entries, and audit logging 
 ---
 
 #### Features (So Far)
-*  User registration and authentication.
+* User registration and authentication
 * Create and manage bank accounts
-* Transfer funds between accounts (atomic operations)
+* Transfer funds between accounts (fully atomic operations)
 * Double-entry ledger system for accounting integrity
-* Full audit trail for every transaction
+* Full audit trail for every transactions
 * RESTful API design following industry conventions
 * Layered architecture (Controller → Service → Repository → Domain)
 * Comprehensive error handling and validation
 * Uses Flyway for database migrations
+* Concurrency-safe transactions processing using pessimistic locking
+* Deadlock prevention via deterministic account lock ordering
+* Configurable transactions isolation levels for data consistency
+* Automatic retry mechanism for transient lock/contention failures
+* Optimistic locking support using versioning for additional safety
+* Idempotent transactions handling to prevent double processing
+* JUnit-based test coverage including concurrency and edge cases
+
 ---
 
 ### Tech Stack
@@ -157,9 +165,9 @@ This section explains how to interact with the Banking System API, including ava
 |Post    | /account       | Creates new account|
  |Get    | /account/{id}  | Gets account by id |
  | Get   | /account       | Retrieves a paginated list of accounts (for the Authenticated user|
-  | Post | /transaction/transfer| Transfers funds between accounts |
- | Post  | /transaction/deposit| Deposits funds in account|
- | Post  | /transaction/withdraw| Withdraw funds from account
+  | Post | /transactions/transfer| Transfers funds between accounts |
+ | Post  | /transactions/deposit| Deposits funds in account|
+ | Post  | /transactions/withdraw| Withdraw funds from account
 
 ### Sample API calls
 
@@ -205,7 +213,7 @@ Response:
 ```
 
 Transfer Funds
-**POST** `/transaction/transfer`
+**POST** `/transactions/transfer`
 ```json
 {
   "fromAccount": 3,

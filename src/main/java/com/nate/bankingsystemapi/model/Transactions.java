@@ -17,7 +17,7 @@ import java.time.Instant;
                 @UniqueConstraint(columnNames = {"requestID","username"})
         }
 )
-public class Transaction {
+public class Transactions {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
