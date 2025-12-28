@@ -63,6 +63,11 @@ public class GlobalExceptionHandler {
         return new ApiError(Instant.now(),400,"Bad Request",ex.getMessage(),req.getRequestURI());
     }
 
+    @ExceptionHandler(DuplicateRequestException.class)
+    @ResponseStatus(HttpStatus.OK)
+    public ApiError handleDuplicate(DuplicateRequestException ex, jakarta.servlet.http.HttpServletRequest req){
+        return new ApiError(Instant.now(),400,"Duplicate Request",ex.getMessage(),req.getRequestURI());
+    }
 
     @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
