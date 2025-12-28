@@ -22,7 +22,7 @@ public class Transactions {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     @NotNull
-    @Column(nullable = false)
+    @Column(nullable = false,unique = true)
     private String requestID;
     @Column(nullable = false)
     private Long amount;

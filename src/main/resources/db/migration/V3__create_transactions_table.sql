@@ -7,5 +7,6 @@ CREATE TABLE transactions (
                              username VARCHAR(20) NOT NULL ,
                              status VARCHAR(20) NOT NULL,
                              action VARCHAR(20) NOT NULL,
-                             instant TIMESTAMP WITH TIME ZONE NOT NULL
+                             instant TIMESTAMP WITH TIME ZONE NOT NULL,
+                             UNIQUE (requestID,username)
 );

@@ -3,6 +3,7 @@ package com.nate.bankingsystemapi.service;
 import com.nate.bankingsystemapi.dto.FundsRequest;
 import com.nate.bankingsystemapi.dto.TransactionDto;
 import com.nate.bankingsystemapi.exception.AccountNotFoundException;
+import com.nate.bankingsystemapi.exception.DuplicateRequestException;
 import com.nate.bankingsystemapi.exception.UserNotFoundException;
 import com.nate.bankingsystemapi.mapper.TransactionMapper;
 import com.nate.bankingsystemapi.model.*;
@@ -149,7 +150,7 @@ public class TransactionService implements ITransactionService {
             repo.saveAndFlush(transactions);
         }
         catch (DataIntegrityViolationException e){
-            return "Request already processed";
+            throw new DuplicateRequestException("Request already processed");
         }
 
         //Fetching Account by id, throws exception if not found
@@ -199,7 +200,7 @@ public class TransactionService implements ITransactionService {
         try{
             repo.saveAndFlush(transactions);
         }catch (DataIntegrityViolationException e){
-            return "Request already processed";
+            throw new DuplicateRequestException("Request already processed");
         }
 
         //Fetching Account by id, throws exception if not found
