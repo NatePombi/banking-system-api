@@ -11,6 +11,7 @@ import com.nate.bankingsystemapi.model.Role;
 import com.nate.bankingsystemapi.model.User;
 import com.nate.bankingsystemapi.repository.AccountRepository;
 import com.nate.bankingsystemapi.repository.UserRepository;
+import com.nate.bankingsystemapi.util.JwtUtil;
 import lombok.AllArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -53,8 +54,12 @@ public class AccountService implements IAccountService {
                     return new UserNotFoundException(username);
                 });
 
+        //Generate account num
+        Long num = JwtUtil.generateAccNum();
+
         //Creating Account entity to store account details
         Account acc = new Account();
+        acc.setAccountNum(num);
         acc.setBalance(postAccountDto.getBalance());
         acc.setCurrency(postAccountDto.getCurrency());
         acc.setUser(user);
@@ -96,7 +101,36 @@ public class AccountService implements IAccountService {
 
         //if user is not owner of account or not admin, throws exception
         if(!acc.getUser().getId().equals(user.getId()) && !user.getRole().equals(Role.ADMIN)){
-            log.error("Unauthorized access for this product: {}",id);
+            log.error("Unauthorized access for this account: {}",id);
+            throw new AccessDeniedException("Not Authorized");
+        }
+
+        //Map Account entity to AccountDto object using mapper and return it
+        return AccountMapper.toDto(acc);
+    }
+
+    /**
+     * Get Account by id
+     *
+     * @param accNum the specified id of the account
+     * @param username the username of the logged in user
+     * @return a {@link AccountDto} object
+     * @throws UserNotFoundException if user with given username not found
+     * @throws AccountNotFoundException if account with the given account number was not found
+     * @throws AccessDeniedException if user is not the owner of account
+     */
+    @Override
+    public AccountDto getAccountByAccountNumber(Long accNum, String username) {
+        log.info("Fetching Account by account number: {}",accNum);
+        //Fetches User by username, throws exception if not found
+        User user = repoU.findByUsername(username).orElseThrow(()-> new UserNotFoundException(username));
+
+        //Fetches Account by id. throws exception if not found
+        Account acc = repo.findByAccountNum(accNum).orElseThrow(AccountNotFoundException::new);
+
+        //if user is not owner of account or not admin, throws exception
+        if(!acc.getUser().getId().equals(user.getId()) && !user.getRole().equals(Role.ADMIN)){
+            log.error("Unauthorized access for this account: {}",accNum);
             throw new AccessDeniedException("Not Authorized");
         }
 
@@ -145,6 +179,8 @@ public class AccountService implements IAccountService {
 
         return accountPage.map(AccountMapper::toDto);
     }
+
+
 
 
 

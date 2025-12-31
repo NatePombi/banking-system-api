@@ -58,7 +58,7 @@ public class AccountControllerIntegrationTest {
         tokenTestUser = JwtUtil.generateToken(testUser.getUsername(),testUser.getRole());
         tokenAdminUser = JwtUtil.generateToken(adminUser.getUsername(),adminUser.getRole());
 
-        Account testAccount = new Account(null,20000L,"ZAR",testUser);
+        Account testAccount = new Account(null,12569875L,20000L,"ZAR",testUser);
         repoA.save(testAccount);
 
     }
@@ -150,6 +150,42 @@ public class AccountControllerIntegrationTest {
         @Test
         void testGetById_FailUnAuthorized() throws Exception {
             mvc.perform(get("/account/1"))
+                    .andExpect(status().isUnauthorized());
+        }
+
+    }
+
+    @DisplayName("Testing get Account by account number: Testing all possible outcomes")
+    @Nested
+    class GetByAccountNum{
+        @Test
+        void testGetByAccountNum_Success() throws Exception {
+            mvc.perform(get("/account/accountNum/12569875")
+                            .header("Authorization", "Bearer " + tokenTestUser))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.balance").value(20000L))
+                    .andExpect(jsonPath("$.currency").value("ZAR"));
+        }
+
+        @Test
+        void testGetByAccountNum_SuccessAdmin() throws Exception {
+            mvc.perform(get("/account/accountNum/12569875")
+                            .header("Authorization", "Bearer " + tokenAdminUser))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.balance").value(20000L))
+                    .andExpect(jsonPath("$.currency").value("ZAR"));
+        }
+
+        @Test
+        void testGetByAccountNum_FailNotFound() throws Exception {
+            mvc.perform(get("/account/accountNum/00569875")
+                            .header("Authorization", "Bearer " + tokenTestUser))
+                    .andExpect(status().isNotFound());
+        }
+
+        @Test
+        void testGetByAccountNum_FailUnAuthorized() throws Exception {
+            mvc.perform(get("/account/accountNum/12569875"))
                     .andExpect(status().isUnauthorized());
         }
 

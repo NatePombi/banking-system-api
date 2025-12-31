@@ -31,7 +31,7 @@ public class TransactionService implements ITransactionService {
 
     @Transactional(isolation = Isolation.READ_COMMITTED)
     @Override
-    public TransactionDto transfer(Long fromId, Long toId, Long amount, String username,String reqId) {
+    public TransactionDto transfer(Long fromAccountNum, Long toAccountNum, Long amount, String username,String reqId) {
 
         //Fetches User, throws exception if not found
         User user = repoU.findByUsername(username)
@@ -55,13 +55,13 @@ public class TransactionService implements ITransactionService {
         }
 
         //Checks if transferring to the same account, throws exception if you are
-        if (fromId == null || toId == null) {
+        if (fromAccountNum == null || toAccountNum == null) {
             transactions.setStatus(Status.FAILED);
             repo.save(transactions);
             throw new IllegalArgumentException("Account ids must be provided");
         }
 
-        if(fromId.equals(toId)){
+        if(fromAccountNum.equals(toAccountNum)){
             transactions.setStatus(Status.FAILED);
             repo.save(transactions);
             throw new IllegalArgumentException("Cannot Transfer to the same account");
@@ -75,19 +75,19 @@ public class TransactionService implements ITransactionService {
 
 
         //determines the lock order to prevent deadlocks
-        Long firstLockId = Math.min(fromId,toId);
-        Long secondLockId = Math.max(fromId,toId);
+        Long firstLockId = Math.min(fromAccountNum,toAccountNum);
+        Long secondLockId = Math.max(fromAccountNum,toAccountNum);
 
 
         //Locks rows in the same order for every transfer
-        Account first = repoA.findByIdForUpdate(firstLockId)
+        Account first = repoA.findByAccountNumForUpdate(firstLockId)
                 .orElseThrow(()-> new AccountNotFoundException(firstLockId));
-        Account second = repoA.findByIdForUpdate(secondLockId)
+        Account second = repoA.findByAccountNumForUpdate(secondLockId)
                 .orElseThrow(()-> new AccountNotFoundException(secondLockId));
 
         //Maps locked account back to from/to
-        Account fromAccount = (firstLockId.equals(fromId)) ? first : second;
-        Account toAccount = (firstLockId.equals(toId)) ? first : second;
+        Account fromAccount = (firstLockId.equals(fromAccountNum)) ? first : second;
+        Account toAccount = (firstLockId.equals(toAccountNum)) ? first : second;
 
         //Checks ownership of from account
         if(!fromAccount.getUser().getId().equals(user.getId())){
@@ -119,7 +119,7 @@ public class TransactionService implements ITransactionService {
         //Create Audit log record
         AuditLog auditLog = new AuditLog();
         auditLog.setAction(Action.TRANSFER);
-        auditLog.setDetails("Account "+ fromId + " to " + toId + ":" + fromAccount.getCurrency() + amount);
+        auditLog.setDetails("Account "+ fromAccount + " to " + toAccount + ":" + fromAccount.getCurrency() + amount);
         auditLog.setPerformedBy(username);
         auditLogRepo.save(auditLog);
 
@@ -154,8 +154,8 @@ public class TransactionService implements ITransactionService {
         }
 
         //Fetching Account by id, throws exception if not found
-        Account acc = repoA.findByIdForUpdate(req.getAccountId())
-                .orElseThrow(()-> new AccountNotFoundException(req.getAccountId()));
+        Account acc = repoA.findByAccountNumForUpdate(req.getAccountNum())
+                .orElseThrow(AccountNotFoundException::new);
 
         //checks if user ownership, throws exception if user not owner
         if(!acc.getUser().getId().equals(user.getId())){
@@ -204,8 +204,8 @@ public class TransactionService implements ITransactionService {
         }
 
         //Fetching Account by id, throws exception if not found
-        Account acc = repoA.findByIdForUpdate(req.getAccountId())
-                .orElseThrow(()-> new AccountNotFoundException(req.getAccountId()));
+        Account acc = repoA.findByAccountNumForUpdate(req.getAccountNum())
+                .orElseThrow(AccountNotFoundException::new);
 
         //checks if user ownership, throws exception if user not owner
         if(!acc.getUser().getId().equals(user.getId())){

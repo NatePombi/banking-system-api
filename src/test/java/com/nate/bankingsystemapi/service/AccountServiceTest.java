@@ -20,6 +20,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.*;
 import org.springframework.security.access.AccessDeniedException;
 
+import java.security.SecureRandom;
 import java.util.List;
 import java.util.Optional;
 
@@ -44,7 +45,7 @@ public class AccountServiceTest {
     @BeforeEach
     void startUp(){
         testUser = new User(1L,"Tester","test","hash-pass", Role.USER);
-        testAccount = new Account(2L,40000L,"ZAR", testUser);
+        testAccount = new Account(2L,3654987L,40000L,"ZAR", testUser);
         testPost = new PostAccountDto(40000L,"ZAR");
 
     }
@@ -138,6 +139,66 @@ public class AccountServiceTest {
         }
 
     }
+
+    @DisplayName("Testing get account by id: All possible results")
+    @Nested
+    class GetAccountByAccountNum{
+        @Test
+        void testGetAccountByAccountNum_Success(){
+            when(repoU.findByUsername("test")).thenReturn(Optional.of(testUser));
+            when(repoA.findByAccountNum(3654987L)).thenReturn(Optional.of(testAccount));
+
+            AccountDto dto = service.getAccountByAccountNumber(3654987L,"test");
+
+            assertNotNull(dto);
+
+            assertEquals(testAccount.getBalance(),dto.getBalance(),"should have the same balance");
+            assertEquals(testAccount.getUser().getId(),dto.getUser(),"should have the same user ID");
+        }
+
+        @Test
+        void testGetAccountByAccountNum_SuccessEvenIfNotOwner_Admin(){
+            User admin = new User(22L,"Admin","admin","admin123",Role.ADMIN);
+            when(repoU.findByUsername("admin")).thenReturn(Optional.of(admin));
+            when(repoA.findByAccountNum(3654987L)).thenReturn(Optional.of(testAccount));
+
+            AccountDto dto = service.getAccountByAccountNumber(3654987L,"admin");
+
+            assertNotNull(dto);
+
+            assertEquals(testAccount.getBalance(),dto.getBalance(),"should have the same balance");
+            assertEquals(testAccount.getUser().getId(),dto.getUser(),"should have the same user id");
+        }
+
+        @Test
+        void testGetAccountByAccountNum_FailUserNotFound(){
+            assertThrows(UserNotFoundException.class,()->{
+                service.getAccountByAccountNumber(3654987L,"test");
+            });
+        }
+
+        @Test
+        void testGetAccountByAccountNum_FailAccountNotFound(){
+            when(repoU.findByUsername("test")).thenReturn(Optional.of(testUser));
+            assertThrows(AccountNotFoundException.class,()->{
+                service.getAccountByAccountNumber(3654987L,"test");
+            });
+        }
+
+        @Test
+        void testGetAccountByAccountNum_FailUnauthorized(){
+            User testUser2 = new User(11L,"Mark","mark","mark123",Role.USER);
+            when(repoA.findByAccountNum(3654987L)).thenReturn(Optional.of(testAccount));
+            when(repoU.findByUsername("mark")).thenReturn(Optional.of(testUser2));
+
+            assertThrows(AccessDeniedException.class,()->{
+                service.getAccountByAccountNumber(3654987L,"mark");
+            });
+
+        }
+
+    }
+
 
     @DisplayName("Testing Get All User Account: All possible results")
     @Nested
