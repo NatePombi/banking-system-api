@@ -14,8 +14,8 @@ public class TransactionMapper {
         return new TransactionDto(
                 transactions.getId(),
                 transactions.getAmount(),
-                transactions.getFromAccount().getId(),
-                transactions.getToAccount().getId(),
+                transactions.getFromAccount().getAccountNum(),
+                transactions.getToAccount().getAccountNum(),
                 transactions.getStatus()
         );
     }

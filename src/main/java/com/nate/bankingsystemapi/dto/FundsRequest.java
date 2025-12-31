@@ -12,9 +12,9 @@ import lombok.Setter;
 @Getter
 @Setter
 public class FundsRequest {
-    @Schema(description = "Id of the account you wish to withdraw or deposit money to")
-    @NotNull(message = "Id cannot be empty")
-    private Long accountId;
+    @Schema(description = "Account number of the account you wish to withdraw or deposit money to")
+    @NotNull(message = "Account number cannot be empty")
+    private Long accountNum;
     @Schema(description = "Amount you want to deposit or withdraw",example = "1000.00")
     @NotNull(message = "Amount cannot be empty")
     @Min(0)

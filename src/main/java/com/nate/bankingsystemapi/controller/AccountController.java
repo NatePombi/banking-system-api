@@ -51,6 +51,18 @@ public class AccountController {
         return ResponseEntity.ok().body(service.getAccountById(id,details.getUsername()));
     }
 
+    @Operation(summary = "Finding Account by Account number")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "successfully found account, returns account"),
+            @ApiResponse(responseCode = "400", description = "Bad Request"),
+            @ApiResponse(responseCode = "403",description = "Forbidden"),
+            @ApiResponse(responseCode = "404",description = "Account not found")
+    })
+    @GetMapping("/accountNum/{accountNum}")
+    public ResponseEntity<AccountDto> getByAccountNumber(@PathVariable Long accountNum, @AuthenticationPrincipal CustomerDetails details){
+        return ResponseEntity.ok().body(service.getAccountByAccountNumber(accountNum,details.getUsername()));
+    }
+
     @Operation(summary = "Fetching a Paginated List of User Accounts")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200",description = "successfully returned list of user accounts"),

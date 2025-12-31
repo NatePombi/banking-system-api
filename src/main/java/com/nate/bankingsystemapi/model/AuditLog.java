@@ -20,7 +20,7 @@ public class AuditLog {
     private Action action;
     @Column(name = "performed_by", nullable = false)
     private String performedBy;
-    @Column(nullable = false)
+    @Column(nullable = false, length = 1000)
     private String details;
     private LocalDateTime createdAt = LocalDateTime.now();
 }

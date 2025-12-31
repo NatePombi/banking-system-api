@@ -6,7 +6,9 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
 
+import java.security.SecureRandom;
 import java.util.Date;
+import java.util.Random;
 
 public class JwtUtil {
 
@@ -47,5 +49,10 @@ public class JwtUtil {
                 .getBody();
 
         return claims.getSubject();
+    }
+
+    public static Long generateAccNum(){
+        SecureRandom random = new SecureRandom();
+        return 1000000000L + random.nextLong(9000000000L);
     }
 }

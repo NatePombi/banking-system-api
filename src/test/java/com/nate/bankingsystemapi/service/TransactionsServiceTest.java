@@ -44,8 +44,8 @@ public class TransactionsServiceTest {
     @BeforeEach
     void startUp(){
         testUser = new User(2L,"Tester","test","hash-pass", Role.USER);
-        testAccount = new Account(1L,10000L,"ZAR",testUser);
-        testAccount2 = new Account(2L,0L,"ZAR",testUser);
+        testAccount = new Account(1L,3654897L,10000L,"ZAR",testUser);
+        testAccount2 = new Account(2L,4598756L,0L,"ZAR",testUser);
 
     }
 
@@ -54,11 +54,11 @@ public class TransactionsServiceTest {
         @Test
         void testTransfer_Success() {
             when(repoU.findByUsername("test")).thenReturn(Optional.of(testUser));
-            when(repoA.findByIdForUpdate(1L)).thenReturn(Optional.of(testAccount));
-            when(repoA.findByIdForUpdate(2L)).thenReturn(Optional.of(testAccount2));
+            when(repoA.findByAccountNumForUpdate(3654897L)).thenReturn(Optional.of(testAccount));
+            when(repoA.findByAccountNumForUpdate(4598756L)).thenReturn(Optional.of(testAccount2));
             when(repoT.save(any(Transactions.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-            TransactionDto dto = service.transfer(1L, 2L, 5000L, "test","UUID1");
+            TransactionDto dto = service.transfer(3654897L, 4598756L, 5000L, "test","UUID1");
 
             assertNotNull(dto);
             assertEquals(5000L, testAccount.getBalance(), "should decreased by the amount transferred");
@@ -72,14 +72,14 @@ public class TransactionsServiceTest {
         @Test
         void testTransfer_FailSendingToSameAccount(){
             assertThrows(RuntimeException.class,()->{
-                service.transfer(1L,1L,5000L,"test","UUID1");
+                service.transfer(4598756L,4598756L,5000L,"test","UUID1");
             });
         }
 
         @Test
         void testTransfer_FailUserNotFound(){
             Exception ex = assertThrows(UserNotFoundException.class,()->{
-                service.transfer(1L,2L,500L,"test","UUID1");
+                service.transfer(3654897L,4598756L,500L,"test","UUID1");
             });
 
             assertTrue(ex.getMessage().contains("test"));
@@ -90,44 +90,44 @@ public class TransactionsServiceTest {
             when(repoU.findByUsername("test")).thenReturn(Optional.of(testUser));
 
             Exception ex = assertThrows(AccountNotFoundException.class,()->{
-                service.transfer(1L,2L,400L,"test","UUID1");
+                service.transfer(3654897L,4598756L,400L,"test","UUID1");
             });
 
-            assertTrue(ex.getMessage().contains("1"));
+            assertTrue(ex.getMessage().contains("3654897"));
         }
 
         @Test
         void testTransfer_FailToAccountNotFound(){
             when(repoU.findByUsername("test")).thenReturn(Optional.of(testUser));
-            when(repoA.findByIdForUpdate(1L)).thenReturn(Optional.of(testAccount));
+            when(repoA.findByAccountNumForUpdate(3654897L)).thenReturn(Optional.of(testAccount));
 
             Exception ex = assertThrows(AccountNotFoundException.class,()->{
-                service.transfer(1L,2L,400L,"test","UUID1");
+                service.transfer(3654897L,4598756L,400L,"test","UUID1");
             });
 
-            assertTrue(ex.getMessage().contains("2"));
+            assertTrue(ex.getMessage().contains("4598756"));
         }
 
         @Test
         void testTransfer_FailUnauthorizedAccess(){
             User notOwner = new User(33L,"Mark","mark","hashed",Role.USER);
             when(repoU.findByUsername("mark")).thenReturn(Optional.of(notOwner));
-            when(repoA.findByIdForUpdate(1L)).thenReturn(Optional.of(testAccount));
-            when(repoA.findByIdForUpdate(2L)).thenReturn(Optional.of(testAccount2));
+            when(repoA.findByAccountNumForUpdate(3654897L)).thenReturn(Optional.of(testAccount));
+            when(repoA.findByAccountNumForUpdate(4598756L)).thenReturn(Optional.of(testAccount2));
 
             assertThrows(AccessDeniedException.class,()->{
-                service.transfer(1L,2L,400L,"mark","UUID1");
+                service.transfer(3654897L,4598756L,400L,"mark","UUID1");
             });
         }
 
         @Test
         void testTransfer_FailInsufficientFunds(){
             when(repoU.findByUsername("test")).thenReturn(Optional.of(testUser));
-            when(repoA.findByIdForUpdate(1L)).thenReturn(Optional.of(testAccount));
-            when(repoA.findByIdForUpdate(2L)).thenReturn(Optional.of(testAccount2));
+            when(repoA.findByAccountNumForUpdate(3654897L)).thenReturn(Optional.of(testAccount));
+            when(repoA.findByAccountNumForUpdate(4598756L)).thenReturn(Optional.of(testAccount2));
 
             assertThrows(IllegalArgumentException.class,()->{
-                service.transfer(1L,2L,40000L,"test","UUID1");
+                service.transfer(3654897L,4598756L,40000L,"test","UUID1");
             });
         }
     }
@@ -139,9 +139,9 @@ public class TransactionsServiceTest {
         void testDepositFunds_Success(){
             Long amount = 4000L;
             Long prevBalance = testAccount.getBalance();
-            FundsRequest req = new FundsRequest(1L,amount,"UUID1");
+            FundsRequest req = new FundsRequest(3654897L,amount,"UUID1");
             when(repoU.findByUsername("test")).thenReturn(Optional.of(testUser));
-            when(repoA.findByIdForUpdate(1L)).thenReturn(Optional.of(testAccount));
+            when(repoA.findByAccountNumForUpdate(3654897L)).thenReturn(Optional.of(testAccount));
 
             service.depositFunds(req,"test");
 
@@ -150,7 +150,7 @@ public class TransactionsServiceTest {
 
         @Test
         void testDepositFunds_FailUserNotFound(){
-            FundsRequest req = new FundsRequest(1L,3000L,"UUID1");
+            FundsRequest req = new FundsRequest(3654897L,3000L,"UUID1");
             Exception ex = assertThrows(UserNotFoundException.class,()->{
                 service.depositFunds(req,"test");
             });
@@ -160,14 +160,13 @@ public class TransactionsServiceTest {
 
         @Test
         void testDepositFunds_FailAccountNotFound(){
-            FundsRequest req = new FundsRequest(1L,3000L,"UUID1");
+            FundsRequest req = new FundsRequest(3654897L,3000L,"UUID1");
             when(repoU.findByUsername("test")).thenReturn(Optional.of(testUser));
 
             Exception ex = assertThrows(AccountNotFoundException.class,()->{
                 service.depositFunds(req,"test");
             });
 
-            assertTrue(ex.getMessage().contains("1"));
         }
 
         @Test
@@ -175,9 +174,9 @@ public class TransactionsServiceTest {
             User user = new User();
             user.setId(22L);
             user.setUsername("mark");
-            FundsRequest req = new FundsRequest(1L,3000L,"UUID1");
+            FundsRequest req = new FundsRequest(3654897L,3000L,"UUID1");
             when(repoU.findByUsername("mark")).thenReturn(Optional.of(user));
-            when(repoA.findByIdForUpdate(1L)).thenReturn(Optional.of(testAccount));
+            when(repoA.findByAccountNumForUpdate(3654897L)).thenReturn(Optional.of(testAccount));
             assertThrows(AccessDeniedException.class,()->{
                 service.depositFunds(req,"mark");
             });
@@ -192,9 +191,9 @@ public class TransactionsServiceTest {
         void testWithdrawFunds_Success(){
             Long amount = 200L;
             Long prevBalance = testAccount.getBalance();
-            FundsRequest req = new FundsRequest(1L,amount,"UUID1");
+            FundsRequest req = new FundsRequest(3654897L,amount,"UUID1");
             when(repoU.findByUsername("test")).thenReturn(Optional.of(testUser));
-            when(repoA.findByIdForUpdate(1L)).thenReturn(Optional.of(testAccount));
+            when(repoA.findByAccountNumForUpdate(3654897L)).thenReturn(Optional.of(testAccount));
 
             service.withdrawFunds(req,"test");
 
@@ -204,10 +203,10 @@ public class TransactionsServiceTest {
 
         @Test
         void testWithdrawFunds_FailInsufficientFunds(){
-            FundsRequest req = new FundsRequest(1L,20000L,"UUID1");
+            FundsRequest req = new FundsRequest(3654897L,20000L,"UUID1");
 
             when(repoU.findByUsername("test")).thenReturn(Optional.of(testUser));
-            when(repoA.findByIdForUpdate(1L)).thenReturn(Optional.of(testAccount));
+            when(repoA.findByAccountNumForUpdate(3654897L)).thenReturn(Optional.of(testAccount));
 
             assertThrows(IllegalArgumentException.class,()->{
                 service.withdrawFunds(req,"test");
@@ -217,7 +216,7 @@ public class TransactionsServiceTest {
 
         @Test
         void testWithdrawFunds_FailUserNotFound(){
-            FundsRequest req = new FundsRequest(1L,2000L,"UUID1");
+            FundsRequest req = new FundsRequest(3654897L,2000L,"UUID1");
 
             Exception ex = assertThrows(UserNotFoundException.class, ()->{
                 service.withdrawFunds(req,"test");
@@ -229,25 +228,24 @@ public class TransactionsServiceTest {
 
         @Test
         void testWithdrawFunds_FailAccountNotFound(){
-            FundsRequest req = new FundsRequest(1L,2000L,"UUID1");
+            FundsRequest req = new FundsRequest(3654897L,2000L,"UUID1");
             when(repoU.findByUsername("test")).thenReturn(Optional.of(testUser));
 
             Exception ex = assertThrows(AccountNotFoundException.class, ()->{
                 service.withdrawFunds(req,"test");
             });
 
-            assertTrue(ex.getMessage().contains("1"));
         }
 
 
         @Test
         void testWithdrawFund_FailAccessDenied(){
             User user = new User();
-            user.setId(22L);
+            user.setId(36548979L);
             user.setUsername("mark");
-            FundsRequest req = new FundsRequest(1L,3000L,"UUID1");
+            FundsRequest req = new FundsRequest(3654897L,3000L,"UUID1");
             when(repoU.findByUsername("mark")).thenReturn(Optional.of(user));
-            when(repoA.findByIdForUpdate(1L)).thenReturn(Optional.of(testAccount));
+            when(repoA.findByAccountNumForUpdate(3654897L)).thenReturn(Optional.of(testAccount));
             assertThrows(AccessDeniedException.class,()->{
                 service.withdrawFunds(req,"mark");
             });

@@ -12,6 +12,8 @@ public class Account {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+    @Column(nullable = false,unique = true,name = "account_number")
+    private Long accountNum;
     @Column( nullable = false)
     @Min(0)
     private Long balance;

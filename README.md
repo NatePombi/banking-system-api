@@ -158,16 +158,17 @@ This section explains how to interact with the Banking System API, including ava
 
 ### Endpoints Overview
 
-| Method | Endpoints      | Description       |
-|--------|----------------|-------------------|
-| Post   | /auth/register | Register new User |
-| Post   | /auth/login    | Logs in User       |
-|Post    | /account       | Creates new account|
- |Get    | /account/{id}  | Gets account by id |
- | Get   | /account       | Retrieves a paginated list of accounts (for the Authenticated user|
-  | Post | /transactions/transfer| Transfers funds between accounts |
- | Post  | /transactions/deposit| Deposits funds in account|
- | Post  | /transactions/withdraw| Withdraw funds from account
+| Method | Endpoints                    | Description                                                        |
+|--------|------------------------------|--------------------------------------------------------------------|
+| Post   | /auth/register               | Register new User                                                  |
+| Post   | /auth/login                  | Logs in User                                                       |
+|Post    | /account                     | Creates new account                                                |
+ |Get    | /account/{id}                | Gets account by id                                                 |
+|Get    | /account/accountNum/{accNum} | Gets account by account number                                     |
+ | Get   | /account                     | Retrieves a paginated list of accounts (for the Authenticated user |
+  | Post | /transactions/transfer       | Transfers funds between accounts                                   |
+ | Post  | /transactions/deposit        | Deposits funds in account                                          |
+ | Post  | /transactions/withdraw       | Withdraw funds from account                                        
 
 ### Sample API calls
 
@@ -205,6 +206,7 @@ Response:
 ```json
 {
   "id": 1,
+  "accountNum": 1306192354,
   "balance": 0,
   "currency": "USD",
   "user": 2,
@@ -216,9 +218,10 @@ Transfer Funds
 **POST** `/transactions/transfer`
 ```json
 {
-  "fromAccount": 3,
-  "toAccount": 4,
-  "amount": 100
+  "fromAccount": 8986793488,
+  "toAccount": 1306192354,
+  "amount": 100,
+  "requestID": "UUID232"
 }
 ```
 
@@ -227,8 +230,8 @@ Response:
 {
   "id": 3,
   "amount": 100,
-  "fromAccount": 3,
-  "toAccount": 4,
+  "fromAccount": 8986793488,
+  "toAccount": 1306192354,
   "status": "SUCCESS"
 }
 ```

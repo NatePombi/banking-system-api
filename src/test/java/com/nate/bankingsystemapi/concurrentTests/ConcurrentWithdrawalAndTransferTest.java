@@ -10,6 +10,7 @@ import com.nate.bankingsystemapi.repository.LedgerEntryRepository;
 import com.nate.bankingsystemapi.repository.TransactionRepository;
 import com.nate.bankingsystemapi.repository.UserRepository;
 import com.nate.bankingsystemapi.service.ITransactionService;
+import com.nate.bankingsystemapi.util.JwtUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.RepeatedTest;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -67,12 +68,14 @@ public class ConcurrentWithdrawalAndTransferTest {
         repoU.save(testUser);
 
         testAcc1 = new Account();
+        testAcc1.setAccountNum(JwtUtil.generateAccNum());
         testAcc1.setBalance(1000L);
         testAcc1.setCurrency("Zar");
         testAcc1.setUser(testUser);
         repo.save(testAcc1);
 
         testAcc2 = new Account();
+        testAcc2.setAccountNum(JwtUtil.generateAccNum());
         testAcc2.setBalance(500L);
         testAcc2.setCurrency("Zar");
         testAcc2.setUser(testUser);
@@ -82,7 +85,7 @@ public class ConcurrentWithdrawalAndTransferTest {
 
     @RepeatedTest(10)
     void testConcurrentWithdrawal() throws InterruptedException {
-        Long accountId = testAcc1.getId();
+        Long accountNum = testAcc1.getAccountNum();
         Long withdrawalAmount = 300L;
         int threadCount = 5;
 
@@ -100,7 +103,7 @@ public class ConcurrentWithdrawalAndTransferTest {
                     startLatch.await();
                     String reqId = UUID.randomUUID().toString();
 
-                    transactionService.withdrawFunds(new FundsRequest(accountId,withdrawalAmount,reqId),"testUser");
+                    transactionService.withdrawFunds(new FundsRequest(accountNum,withdrawalAmount,reqId),"testUser");
                     successCount.incrementAndGet();
                 }
                 catch (Exception e){
@@ -120,7 +123,7 @@ public class ConcurrentWithdrawalAndTransferTest {
         startLatch.countDown();
         doneLatch.await();
 
-        Account updatedAcc = repo.findById(accountId).orElseThrow();
+        Account updatedAcc = repo.findByAccountNum(accountNum).orElseThrow();
 
         int success = successCount.get();
         int failure = failureCount.get();
@@ -138,7 +141,7 @@ public class ConcurrentWithdrawalAndTransferTest {
 
     @RepeatedTest(20)
     void testSimultaneousDepositAndWithdrawal() throws InterruptedException {
-        Long accountId = testAcc1.getId();
+        Long accountNum = testAcc1.getAccountNum();
         Long withdrawalAmount = 500L;
         Long depositAmount = 100L;
         int threadCount = 10;
@@ -159,7 +162,7 @@ public class ConcurrentWithdrawalAndTransferTest {
             try{
                 withdrawStartLatch.await();
                 String reqId = UUID.randomUUID().toString();
-                transactionService.withdrawFunds(new FundsRequest(accountId,withdrawalAmount,reqId),"testUser");
+                transactionService.withdrawFunds(new FundsRequest(accountNum,withdrawalAmount,reqId),"testUser");
                 withdrawSuccessCount.incrementAndGet();
             } catch (Exception e) {
                 System.out.println("Failed to withdraw: " +e.getMessage() );
@@ -174,7 +177,7 @@ public class ConcurrentWithdrawalAndTransferTest {
             try{
                 depositStartLatch.await();
                 String reqID = UUID.randomUUID().toString();
-                transactionService.depositFunds(new FundsRequest(accountId,depositAmount,reqID),"testUser");
+                transactionService.depositFunds(new FundsRequest(accountNum,depositAmount,reqID),"testUser");
                 depositSuccessCount.incrementAndGet();
             } catch (Exception e) {
                 System.out.println("Failed to Deposit: " + e.getMessage());
@@ -195,7 +198,7 @@ public class ConcurrentWithdrawalAndTransferTest {
         depositDoneLatch.await();
         withdrawDoneLatch.await();
 
-        Account updatedAcc = repo.findById(accountId).orElseThrow();
+        Account updatedAcc = repo.findByAccountNum(accountNum).orElseThrow();
         Long expectedBalance = 1000L + (depositSuccessCount.get()*depositAmount) - (withdrawSuccessCount.get() * withdrawalAmount);
 
         assertEquals(expectedBalance,updatedAcc.getBalance());
@@ -211,8 +214,8 @@ public class ConcurrentWithdrawalAndTransferTest {
 
     @RepeatedTest(10)
     void testConcurrentTransfer() throws InterruptedException {
-        Long fromAcc = testAcc1.getId();
-        Long toAcc = testAcc2.getId();
+        Long fromAcc = testAcc1.getAccountNum();
+        Long toAcc = testAcc2.getAccountNum();
         int threadCount = 7;
         Long transferAmount = 200L;
 
@@ -253,8 +256,8 @@ public class ConcurrentWithdrawalAndTransferTest {
 
         doneLatch.await();
 
-        Account from = repo.findById(fromAcc).orElseThrow();
-        Account to = repo.findById(toAcc).orElseThrow();
+        Account from = repo.findByAccountNum(fromAcc).orElseThrow();
+        Account to = repo.findByAccountNum(toAcc).orElseThrow();
 
 
         int success = successCount.get();
@@ -279,7 +282,7 @@ public class ConcurrentWithdrawalAndTransferTest {
 
     @RepeatedTest(10)
     void testIdempotencyWithdrawal() throws InterruptedException {
-        Long fromAcc = testAcc1.getId();
+        Long fromAcc = testAcc1.getAccountNum();
         Long withdrawAmount  = 200L;
         int threadCount = 7;
         String reqId = UUID.randomUUID().toString();
@@ -314,7 +317,7 @@ public class ConcurrentWithdrawalAndTransferTest {
         doneLatch.await();
 
 
-        Account updatedAcc = repo.findById(fromAcc).orElseThrow();
+        Account updatedAcc = repo.findByAccountNum(fromAcc).orElseThrow();
 
         assertEquals(threadCount - 1, failureCount.get());
 
@@ -330,7 +333,7 @@ public class ConcurrentWithdrawalAndTransferTest {
 
     @RepeatedTest(10)
     void testIdempotencyDeposit() throws InterruptedException {
-        Long fromAcc = testAcc1.getId();
+        Long fromAcc = testAcc1.getAccountNum();
         Long depositAmount  = 200L;
         int threadCount = 7;
         String reqId = UUID.randomUUID().toString();
@@ -364,7 +367,7 @@ public class ConcurrentWithdrawalAndTransferTest {
         doneLatch.await();
 
 
-        Account updatedAcc = repo.findById(fromAcc).orElseThrow();
+        Account updatedAcc = repo.findByAccountNum(fromAcc).orElseThrow();
 
         assertEquals(1, successCount.get());
 
@@ -376,8 +379,8 @@ public class ConcurrentWithdrawalAndTransferTest {
 
     @RepeatedTest(10)
     void testIdempotencyTransfer() throws InterruptedException {
-        Long fromAcc = testAcc1.getId();
-        Long toAcc = testAcc2.getId();
+        Long fromAcc = testAcc1.getAccountNum();
+        Long toAcc = testAcc2.getAccountNum();
         Long transferAmount = 300L;
         String reqId = UUID.randomUUID().toString();
         int threadCount = 7;
@@ -413,8 +416,8 @@ public class ConcurrentWithdrawalAndTransferTest {
         doneLatch.await();
 
 
-        Account updatedFromAcc = repo.findById(fromAcc).orElseThrow();
-        Account updtaedToAcc = repo.findById(toAcc).orElseThrow();
+        Account updatedFromAcc = repo.findByAccountNum(fromAcc).orElseThrow();
+        Account updtaedToAcc = repo.findByAccountNum(toAcc).orElseThrow();
 
         assertEquals(1, successCount.get());
         assertEquals(6, failureCount.get());
