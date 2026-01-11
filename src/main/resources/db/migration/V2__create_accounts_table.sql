@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS account (
+CREATE TABLE account (
                          id BIGSERIAL PRIMARY KEY,
                          account_number BIGINT NOT NULL ,
                          balance BIGINT NOT NULL,

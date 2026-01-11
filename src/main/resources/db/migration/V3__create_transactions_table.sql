@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS transactions (
+CREATE TABLE transactions (
                              id BIGSERIAL PRIMARY KEY,
                              requestID VARCHAR(10) NOT NULL,
                              amount BIGINT NOT NULL,
