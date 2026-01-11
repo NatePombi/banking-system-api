@@ -60,8 +60,6 @@ Supports account management, money transfers, ledger entries, and audit logging 
 
 * Docker & Docker Compose (with Postgres)
 
-* Deploy online (Railway/Render/Heroku) for live demo
-
 * Analytics dashboard (product stock levels, sales trends, etc.)
 
 --- 
