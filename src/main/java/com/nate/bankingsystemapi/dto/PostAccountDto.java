@@ -19,7 +19,5 @@ public class PostAccountDto {
     @Min(0)
     @Schema(description = "Balance of the account",example = "1000.00")
     private Long balance;
-    @NotBlank(message = "Currency cannot be empty")
-    @Schema(description = "Currency of the account",example = "USD")
-    private String currency;
+
 }

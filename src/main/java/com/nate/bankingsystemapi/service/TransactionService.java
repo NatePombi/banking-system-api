@@ -2,6 +2,7 @@ package com.nate.bankingsystemapi.service;
 
 import com.nate.bankingsystemapi.dto.FundsRequest;
 import com.nate.bankingsystemapi.dto.TransactionDto;
+import com.nate.bankingsystemapi.dto.TransferRequest;
 import com.nate.bankingsystemapi.exception.AccountNotFoundException;
 import com.nate.bankingsystemapi.exception.DuplicateRequestException;
 import com.nate.bankingsystemapi.exception.UserNotFoundException;
@@ -31,52 +32,46 @@ public class TransactionService implements ITransactionService {
 
     @Transactional(isolation = Isolation.READ_COMMITTED)
     @Override
-    public TransactionDto transfer(Long fromAccountNum, Long toAccountNum, Long amount, String username,String reqId) {
+    public TransactionDto transfer(TransferRequest request, Long userId) {
 
         //Fetches User, throws exception if not found
-        User user = repoU.findByUsername(username)
-                .orElseThrow(() -> new UserNotFoundException(username));
+        User user = repoU.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException(userId));
 
         //Create Transaction Record
-        Transactions transactions = new Transactions();
-        transactions.setAmount(amount);
-        transactions.setStatus(Status.PENDING);
-        transactions.setRequestID(reqId);
-        transactions.setInstant(Instant.now());
-        transactions.setAction(Action.TRANSFER);
-        transactions.setUsername(username);
-
+        Transactions transactions = new Transactions(request.getAmount(),user.getUsername(), request.getRequestID());
+        transactions.changeAction(Action.TRANSFER);
         try{
             repo.save(transactions);
         }
         catch (DataIntegrityViolationException e){
-            Optional<Transactions> existing = repo.findByRequestIDAndUsername(reqId, username);
+            Optional<Transactions> existing = repo.findByRequestIDAndUsername(request.getRequestID(), user.getUsername());
             return TransactionMapper.toDto(existing.get());
         }
 
         //Checks if transferring to the same account, throws exception if you are
-        if (fromAccountNum == null || toAccountNum == null) {
-            transactions.setStatus(Status.FAILED);
+        if (request.getFromAccount() == null || request.getToAccount() == null) {
+            transactions.changeStatus(Status.FAILED);
             repo.save(transactions);
             throw new IllegalArgumentException("Account ids must be provided");
         }
 
-        if(fromAccountNum.equals(toAccountNum)){
-            transactions.setStatus(Status.FAILED);
+        if(request.getFromAccount().equals(request.getToAccount())){
+            transactions.changeStatus(Status.FAILED);
             repo.save(transactions);
             throw new IllegalArgumentException("Cannot Transfer to the same account");
         }
 
-        if (amount == null || amount <= 0) {
-            transactions.setStatus(Status.FAILED);
+        if (request.getAmount() == null || request.getAmount() <= 0) {
+            transactions.changeStatus(Status.FAILED);
             repo.save(transactions);
             throw new IllegalArgumentException("Amount must be > 0");
         }
 
 
         //determines the lock order to prevent deadlocks
-        Long firstLockId = Math.min(fromAccountNum,toAccountNum);
-        Long secondLockId = Math.max(fromAccountNum,toAccountNum);
+        Long firstLockId = Math.min(request.getFromAccount(), request.getToAccount());
+        Long secondLockId = Math.max(request.getFromAccount(), request.getToAccount());
 
 
         //Locks rows in the same order for every transfer
@@ -86,41 +81,41 @@ public class TransactionService implements ITransactionService {
                 .orElseThrow(()-> new AccountNotFoundException(secondLockId));
 
         //Maps locked account back to from/to
-        Account fromAccount = (firstLockId.equals(fromAccountNum)) ? first : second;
-        Account toAccount = (firstLockId.equals(toAccountNum)) ? first : second;
+        Account fromAccount = (firstLockId.equals(request.getFromAccount())) ? first : second;
+        Account toAccount = (firstLockId.equals(request.getToAccount())) ? first : second;
 
         //Checks ownership of from account
-        if(!fromAccount.getUser().getId().equals(user.getId())){
+        if(!fromAccount.getUserId().equals(user.getId())){
             throw new AccessDeniedException("Unauthorized Access");
         }
 
 
         //Checks if balance is enough for transfer
-        if(fromAccount.getBalance()< amount){
-            transactions.setStatus(Status.FAILED);
+        if(fromAccount.getBalance()< request.getAmount()){
+            transactions.changeStatus(Status.FAILED);
             repo.save(transactions);
             throw new IllegalArgumentException("Insufficient Balance");
         }
 
         //Performs Debit and Credit
-        fromAccount.setBalance(fromAccount.getBalance() - amount);
-        toAccount.setBalance(toAccount.getBalance() + amount);
+        fromAccount.changeBalance(fromAccount.getBalance() - request.getAmount());
+        toAccount.changeBalance(toAccount.getBalance() + request.getAmount());
 
-       transactions.setFromAccount(fromAccount);
-       transactions.setToAccount(toAccount);
-       transactions.setStatus(Status.SUCCESS);
+       transactions.changeFromAccount(fromAccount);
+       transactions.changeToAccount(toAccount);
+       transactions.changeStatus(Status.SUCCESS);
         transactions = repo.save(transactions);
 
         //Create Ledger Entries
-       recordDebit(fromAccount,amount, transactions,Action.TRANSFER);
-        recordCredit(toAccount,amount, transactions,Action.TRANSFER);
+       recordDebit(fromAccount,request.getAmount(), transactions,Action.TRANSFER);
+        recordCredit(toAccount, request.getAmount(), transactions,Action.TRANSFER);
 
 
         //Create Audit log record
         AuditLog auditLog = new AuditLog();
         auditLog.setAction(Action.TRANSFER);
-        auditLog.setDetails("Account "+ fromAccount + " to " + toAccount + ":" + fromAccount.getCurrency() + amount);
-        auditLog.setPerformedBy(username);
+        auditLog.setDetails("Account "+ fromAccount + " to " + toAccount + ":" + fromAccount.getCurrency() + request.getAmount());
+        auditLog.setPerformedBy(user.getUsername());
         auditLogRepo.save(auditLog);
 
 
@@ -131,20 +126,15 @@ public class TransactionService implements ITransactionService {
 
     @Transactional(isolation = Isolation.READ_COMMITTED)
     @Override
-    public String depositFunds(FundsRequest req, String username) {
+    public String depositFunds(FundsRequest req, Long userId) {
 
         //fetching user by username, throws exception if not found
-        User user = repoU.findByUsername(username)
-                .orElseThrow(()-> new UserNotFoundException(username));
+        User user = repoU.findById(userId)
+                .orElseThrow(()-> new UserNotFoundException(userId));
 
         //Create transaction (Idempotency gate)
-        Transactions transactions = new Transactions();
-        transactions.setAction(Action.DEPOSIT);
-        transactions.setInstant(Instant.now());
-        transactions.setAmount(req.getAmount());
-        transactions.setStatus(Status.PENDING);
-        transactions.setUsername(username);
-        transactions.setRequestID(req.getRequestID());
+        Transactions transactions = new Transactions(req.getAmount(),user.getUsername(), req.getRequestID());
+        transactions.changeAction(Action.DEPOSIT);
 
         try{
             repo.saveAndFlush(transactions);
@@ -158,8 +148,8 @@ public class TransactionService implements ITransactionService {
                 .orElseThrow(AccountNotFoundException::new);
 
         //checks if user ownership, throws exception if user not owner
-        if(!acc.getUser().getId().equals(user.getId())){
-            transactions.setStatus(Status.FAILED);
+        if(!acc.getUserId().equals(user.getId())){
+            transactions.changeStatus(Status.FAILED);
             repo.save(transactions);
             throw new AccessDeniedException("Unauthorized Access");
         }
@@ -167,10 +157,10 @@ public class TransactionService implements ITransactionService {
 
 
         //Performs the deposit
-        acc.setBalance(acc.getBalance() + req.getAmount());
+        acc.changeBalance(acc.getBalance() + req.getAmount());
 
-        transactions.setToAccount(acc);
-        transactions.setStatus(Status.SUCCESS);
+        transactions.changeToAccount(acc);
+        transactions.changeStatus(Status.SUCCESS);
         repo.save(transactions);
 
         //save to Ledger
@@ -182,20 +172,15 @@ public class TransactionService implements ITransactionService {
 
     @Transactional(isolation = Isolation.READ_COMMITTED)
     @Override
-    public String withdrawFunds(FundsRequest req, String username) {
+    public String withdrawFunds(FundsRequest req, Long userId) {
 
         //fetching user by username, throws exception if not found
-        User user = repoU.findByUsername(username)
-                .orElseThrow(()-> new UserNotFoundException(username));
+        User user = repoU.findById(userId)
+                .orElseThrow(()-> new UserNotFoundException(userId));
 
         // Creating transaction (Idempotency gate)
-        Transactions transactions = new Transactions();
-        transactions.setRequestID(req.getRequestID());
-        transactions.setInstant(Instant.now());
-        transactions.setStatus(Status.PENDING);
-        transactions.setAction(Action.WITHDRAW);
-        transactions.setAmount(req.getAmount());
-        transactions.setUsername(username);
+        Transactions transactions = new Transactions(req.getAmount(),user.getUsername(), req.getRequestID());
+        transactions.changeAction(Action.WITHDRAW);
 
         try{
             repo.saveAndFlush(transactions);
@@ -208,8 +193,8 @@ public class TransactionService implements ITransactionService {
                 .orElseThrow(AccountNotFoundException::new);
 
         //checks if user ownership, throws exception if user not owner
-        if(!acc.getUser().getId().equals(user.getId())){
-            transactions.setStatus(Status.FAILED);
+        if(!acc.getUserId().equals(user.getId())){
+            transactions.changeStatus(Status.FAILED);
             repo.save(transactions);
             throw new AccessDeniedException("Unauthorized Access");
         }
@@ -217,17 +202,17 @@ public class TransactionService implements ITransactionService {
 
         //Checks if amount is enough for withdraw, throws exception if amount insufficient
         if(acc.getBalance() < req.getAmount()) {
-            transactions.setStatus(Status.FAILED);
+            transactions.changeStatus(Status.FAILED);
             repo.save(transactions);
             throw new IllegalArgumentException("Insufficient balance");
         }
 
         //Performs the withdrawal
-        acc.setBalance(acc.getBalance() - req.getAmount());
+        acc.changeBalance(acc.getBalance() - req.getAmount());
 
 
-        transactions.setStatus(Status.SUCCESS);
-        transactions.setFromAccount(acc);
+        transactions.changeStatus(Status.SUCCESS);
+        transactions.changeFromAccount(acc);
         repo.save(transactions);
 
         //save to Ledger

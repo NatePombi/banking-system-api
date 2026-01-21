@@ -4,6 +4,7 @@ import com.nate.bankingsystemapi.dto.FundsRequest;
 import com.nate.bankingsystemapi.dto.TransferRequest;
 import com.nate.bankingsystemapi.model.Account;
 import com.nate.bankingsystemapi.model.Role;
+import com.nate.bankingsystemapi.model.Transactions;
 import com.nate.bankingsystemapi.model.User;
 import com.nate.bankingsystemapi.repository.AccountRepository;
 import com.nate.bankingsystemapi.repository.LedgerEntryRepository;
@@ -60,25 +61,15 @@ public class ConcurrentWithdrawalAndTransferTest {
         repo.deleteAll();
         repoU.deleteAll();
 
-        testUser = new User();
-        testUser.setUsername("testUser");
-        testUser.setRole(Role.USER);
-        testUser.setFullName("Tester");
-        testUser.setPassword(passwordEncoder.encode("password"));
+        testUser = new User("Tester","testUser",passwordEncoder.encode("password"));
         repoU.save(testUser);
 
-        testAcc1 = new Account();
-        testAcc1.setAccountNum(JwtUtil.generateAccNum());
-        testAcc1.setBalance(1000L);
-        testAcc1.setCurrency("Zar");
-        testAcc1.setUser(testUser);
+        testAcc1 = new Account(testUser.getId());
+        testAcc1.changeBalance(1000L);
         repo.save(testAcc1);
 
-        testAcc2 = new Account();
-        testAcc2.setAccountNum(JwtUtil.generateAccNum());
-        testAcc2.setBalance(500L);
-        testAcc2.setCurrency("Zar");
-        testAcc2.setUser(testUser);
+        testAcc2 = new Account(testUser.getId());
+        testAcc2.changeBalance(500L);
         repo.save(testAcc2);
     }
 
@@ -101,9 +92,8 @@ public class ConcurrentWithdrawalAndTransferTest {
         Runnable withdrawalTask = () -> {
                 try {
                     startLatch.await();
-                    String reqId = UUID.randomUUID().toString();
-
-                    transactionService.withdrawFunds(new FundsRequest(accountNum,withdrawalAmount,reqId),"testUser");
+                    String req = UUID.randomUUID().toString();
+                    transactionService.withdrawFunds(new FundsRequest(accountNum,withdrawalAmount,req),testUser.getId());
                     successCount.incrementAndGet();
                 }
                 catch (Exception e){
@@ -161,8 +151,8 @@ public class ConcurrentWithdrawalAndTransferTest {
         Runnable withdrawalTask = () -> {
             try{
                 withdrawStartLatch.await();
-                String reqId = UUID.randomUUID().toString();
-                transactionService.withdrawFunds(new FundsRequest(accountNum,withdrawalAmount,reqId),"testUser");
+                String req = UUID.randomUUID().toString();
+                transactionService.withdrawFunds(new FundsRequest(accountNum,withdrawalAmount,req),testUser.getId());
                 withdrawSuccessCount.incrementAndGet();
             } catch (Exception e) {
                 System.out.println("Failed to withdraw: " +e.getMessage() );
@@ -176,8 +166,8 @@ public class ConcurrentWithdrawalAndTransferTest {
         Runnable depositTask = () -> {
             try{
                 depositStartLatch.await();
-                String reqID = UUID.randomUUID().toString();
-                transactionService.depositFunds(new FundsRequest(accountNum,depositAmount,reqID),"testUser");
+                String req = UUID.randomUUID().toString();
+                transactionService.depositFunds(new FundsRequest(accountNum,depositAmount,req),testUser.getId());
                 depositSuccessCount.incrementAndGet();
             } catch (Exception e) {
                 System.out.println("Failed to Deposit: " + e.getMessage());
@@ -234,8 +224,9 @@ public class ConcurrentWithdrawalAndTransferTest {
             try {
                 startLatch.await();
                 String reqId = UUID.randomUUID().toString();
+                TransferRequest transfer = new TransferRequest(fromAcc,toAcc,5000L,reqId);
 
-                transactionService.transfer(fromAcc, toAcc,transferAmount,"testUser",reqId);
+                transactionService.transfer(transfer,testUser.getId());
                 successCount.incrementAndGet();
             }
             catch (Exception e){
@@ -297,7 +288,7 @@ public class ConcurrentWithdrawalAndTransferTest {
         Runnable withdrawalTask = () -> {
             try{
                 startLatch.await();
-                transactionService.withdrawFunds(new FundsRequest(fromAcc,withdrawAmount,reqId),"testUser");
+                transactionService.withdrawFunds(new FundsRequest(fromAcc,withdrawAmount,reqId),testUser.getId());
                 successCount.incrementAndGet();
             }
             catch (Exception e){
@@ -347,7 +338,8 @@ public class ConcurrentWithdrawalAndTransferTest {
         Runnable depositTask = () -> {
             try{
                 startLatch.await();
-                transactionService.depositFunds(new FundsRequest(fromAcc,depositAmount,reqId),"testUser");
+                transactionService.depositFunds(new FundsRequest(fromAcc,depositAmount,reqId),testUser.getId());
+
                 successCount.incrementAndGet();
             }
             catch (Exception e){
@@ -395,7 +387,8 @@ public class ConcurrentWithdrawalAndTransferTest {
         Runnable transferTask = () -> {
             try{
                 startLatch.await();
-                transactionService.transfer(fromAcc,toAcc,transferAmount,"testUser",reqId);
+                TransferRequest transfer = new TransferRequest(fromAcc,toAcc,transferAmount,reqId);
+                transactionService.transfer(transfer,testUser.getId());
                 successCount.incrementAndGet();
             }
             catch (Exception e){

@@ -39,7 +39,7 @@ public class TransactionController {
     @PostMapping("/transfer")
     public ResponseEntity<TransactionDto> transfer(@RequestBody @Valid TransferRequest request, @AuthenticationPrincipal CustomerDetails details) throws Exception {
            return RetryHelper.retryOnLock(
-                   ()-> ResponseEntity.ok().body(service.transfer(request.getFromAccount(), request.getToAccount(), request.getAmount(), details.getUsername(), request.getRequestID())),
+                   ()-> ResponseEntity.ok().body(service.transfer(request,details.getUser().getId())),
                    3
            );
 
@@ -58,7 +58,7 @@ public class TransactionController {
     @PostMapping("/deposit")
     public ResponseEntity<String> depositFunds(@RequestBody @Valid FundsRequest req, @AuthenticationPrincipal CustomerDetails details) throws Exception {
            return RetryHelper.retryOnLock(
-                   () -> ResponseEntity.ok(service.depositFunds(req,details.getUsername())),
+                   () -> ResponseEntity.ok(service.depositFunds(req,details.getUser().getId())),
                    3
            );
 
@@ -75,7 +75,7 @@ public class TransactionController {
     @PostMapping("/withdraw")
     public ResponseEntity<String> withdrawFunds(@RequestBody @Valid FundsRequest req, @AuthenticationPrincipal CustomerDetails details) throws Exception {
             return RetryHelper.retryOnLock(
-                    () -> ResponseEntity.ok().body(service.withdrawFunds(req, details.getUsername())),
+                    () -> ResponseEntity.ok().body(service.withdrawFunds(req, details.getUser().getId())),
                     3
             );
     }

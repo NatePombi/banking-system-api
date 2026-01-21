@@ -42,11 +42,7 @@ public class UserService implements IUserService, UserDetailsService {
         log.info("Registers user: {}",registerDto.getUsername());
 
         //Creating User entity to store registered User
-        User user = new User();
-        user.setFullName(registerDto.getFullName());
-        user.setUsername(registerDto.getUsername());
-        user.setPassword(encoder.encode(registerDto.getPassword()));
-        user.setRole(Role.USER);
+        User user = new User(registerDto.getFullName(),registerDto.getUsername(),encoder.encode(registerDto.getPassword()));
 
         //Saves registered user
         log.debug("Saves the registered user entity into repo");
@@ -82,7 +78,7 @@ public class UserService implements IUserService, UserDetailsService {
         User user = repo.findByUsername(username)
                 .orElseThrow(()->{
                    log.error("User not found: {}",username);
-                   return new UserNotFoundException(username);
+                   return new UserNotFoundException();
                 });
 
         // returns new CustomerDetails

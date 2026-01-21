@@ -16,21 +16,19 @@ public class AccountMapper {
                 acc.getAccountNum(),
                 acc.getBalance(),
                 acc.getCurrency(),
-                acc.getUser() !=null ? acc.getUser().getId(): null
+                acc.getUserId()
         );
     }
 
-    public static Account toEntity(AccountDto accDto, User user){
+    public static Account toEntity(AccountDto accDto, Long userId){
         if(accDto == null){
             return null;
         }
 
-        return new Account(
-                accDto.getId(),
-                accDto.getAccountNum(),
-                accDto.getBalance(),
-                accDto.getCurrency(),
-                user
-        );
+        Account acc = new Account(userId);
+        acc.changeBalance(accDto.getBalance());
+        acc.changeCurrency(accDto.getCurrency());
+
+        return acc;
     }
 }

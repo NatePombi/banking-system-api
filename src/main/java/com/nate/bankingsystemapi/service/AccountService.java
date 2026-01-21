@@ -39,30 +39,25 @@ public class AccountService implements IAccountService {
      * Creating Account for User
      *
      * @param postAccountDto a {@link PostAccountDto} object that has account details
-     * @param username the specified username of the logged-in user
+     * @param userId the specified user ID of the logged-in user
      * @return a {@link AccountDto} object
      * @throws UserNotFoundException if user with given username was not found
      */
     @Override
-    public AccountDto createAccount(PostAccountDto postAccountDto, String username) {
-        log.info("Creating account for user: {}",username);
+    public AccountDto createAccount(PostAccountDto postAccountDto, Long userId) {
+        log.info("Creating account for userId: {}",userId);
 
         //Fetching User, throws exception if not found
-        User user = repoU.findByUsername(username)
-                .orElseThrow(()->{
-                    log.error("User not found: {}",username);
-                    return new UserNotFoundException(username);
-                });
-
-        //Generate account num
-        Long num = JwtUtil.generateAccNum();
+        if(!repoU.existsById(userId)) {
+           throw new UserNotFoundException(userId);
+        }
 
         //Creating Account entity to store account details
-        Account acc = new Account();
-        acc.setAccountNum(num);
-        acc.setBalance(postAccountDto.getBalance());
-        acc.setCurrency(postAccountDto.getCurrency());
-        acc.setUser(user);
+        Account acc = new Account(userId);
+
+        if(postAccountDto.getBalance() != null || postAccountDto.getBalance() > 0) {
+            acc.changeBalance(postAccountDto.getBalance());
+        }
 
         //saves the account entity to repo
         Account saved = repo.save(acc);
@@ -75,21 +70,21 @@ public class AccountService implements IAccountService {
      * Get Account by id
      *
      * @param id the specified id of the account
-     * @param username the username of the logged in user
+     * @param userId the user ID of the logged in user
      * @return a {@link AccountDto} object
      * @throws UserNotFoundException if user with given username not found
      * @throws AccountNotFoundException if account with the given id was not found
      * @throws AccessDeniedException if user is not the owner of account
      */
     @Override
-    public AccountDto getAccountById(Long id, String username) {
+    public AccountDto getAccountById(Long id, Long userId) {
         log.info("Fetching Account by id: {}",id);
 
         //Fetches User by username, throws exception if not found
-        User user = repoU.findByUsername(username)
+        User user = repoU.findById(userId)
                 .orElseThrow(()->{
-                    log.error("User not found: {}",username);
-                    return new UserNotFoundException(username);
+                    log.error("User not found: {}",userId);
+                    return new UserNotFoundException(userId);
                 });
 
         //Fetches Account by id. throws exception if not found
@@ -100,7 +95,7 @@ public class AccountService implements IAccountService {
                 });
 
         //if user is not owner of account or not admin, throws exception
-        if(!acc.getUser().getId().equals(user.getId()) && !user.getRole().equals(Role.ADMIN)){
+        if(!acc.getUserId().equals(user.getId()) && !user.getRole().equals(Role.ADMIN)){
             log.error("Unauthorized access for this account: {}",id);
             throw new AccessDeniedException("Not Authorized");
         }
@@ -113,23 +108,23 @@ public class AccountService implements IAccountService {
      * Get Account by id
      *
      * @param accNum the specified id of the account
-     * @param username the username of the logged in user
+     * @param userId the user ID of the logged in user
      * @return a {@link AccountDto} object
      * @throws UserNotFoundException if user with given username not found
      * @throws AccountNotFoundException if account with the given account number was not found
      * @throws AccessDeniedException if user is not the owner of account
      */
     @Override
-    public AccountDto getAccountByAccountNumber(Long accNum, String username) {
+    public AccountDto getAccountByAccountNumber(Long accNum, Long userId) {
         log.info("Fetching Account by account number: {}",accNum);
         //Fetches User by username, throws exception if not found
-        User user = repoU.findByUsername(username).orElseThrow(()-> new UserNotFoundException(username));
+        User user = repoU.findById(userId).orElseThrow(()-> new UserNotFoundException(userId));
 
         //Fetches Account by id. throws exception if not found
         Account acc = repo.findByAccountNum(accNum).orElseThrow(AccountNotFoundException::new);
 
         //if user is not owner of account or not admin, throws exception
-        if(!acc.getUser().getId().equals(user.getId()) && !user.getRole().equals(Role.ADMIN)){
+        if(!acc.getUserId().equals(user.getId()) && !user.getRole().equals(Role.ADMIN)){
             log.error("Unauthorized access for this account: {}",accNum);
             throw new AccessDeniedException("Not Authorized");
         }
@@ -142,7 +137,7 @@ public class AccountService implements IAccountService {
     /**
      * Retrieves a paginated and sorted list of accounts
      *
-     * @param username the specified username of logged in user
+     * @param userId the specified user ID of logged in user
      * @param page the page number that user wants to retrieve (0-based)
      * @param size the amount of items per page
      * @param sortBy the field field the page is sorted by (e.g id,balcanceCent etc)
@@ -151,14 +146,14 @@ public class AccountService implements IAccountService {
      * @throws UserNotFoundException if given username is not found
      */
     @Override
-    public Page<AccountDto> getAllUserAccount(String username, int page, int size, String sortBy, String direction) {
-        log.info("Fetch a paginated list of accounts for user: {}, page {}, size {}, sortBy {}, direction {}",username,page,size,sortBy,direction);
+    public Page<AccountDto> getAllUserAccount(Long userId, int page, int size, String sortBy, String direction) {
+        log.info("Fetch a paginated list of accounts for user: {}, page {}, size {}, sortBy {}, direction {}",userId,page,size,sortBy,direction);
 
         //Fetches user by username, throws exception if not found
-        User user = repoU.findByUsername(username)
+        User user = repoU.findById(userId)
                 .orElseThrow(()-> {
-                    log.error("User not found: {}",username);
-                    return new UserNotFoundException(username);
+                    log.error("User not found: {}",userId);
+                    return new UserNotFoundException(userId);
                 });
 
         //Configure sorting (ascending or descending)
@@ -173,7 +168,7 @@ public class AccountService implements IAccountService {
             accountPage = repo.findAll(pageable);
         }
         else {
-            accountPage = repo.findByUserUsername(username,pageable);
+            accountPage = repo.findByUserId(userId,pageable);
         }
 
 

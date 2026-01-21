@@ -45,20 +45,22 @@ public class AccountControllerIntegrationTest {
 
     private String tokenTestUser;
     private String tokenAdminUser;
+    private Account testAccount;
 
 
     @BeforeEach
     void startUp(){
         repo.deleteAll();
-        User testUser = new User(null,"Tester","tester",encoder.encode("test123"), Role.USER);
-        User adminUser = new User(null,"Admin","admin",encoder.encode("test123"), Role.ADMIN);
+        User testUser = new User("Tester","tester",encoder.encode("test123"));
+        User adminUser = new User("Admin","admin",encoder.encode("test123"));
+        adminUser.changeRole(Role.ADMIN);
         repo.save(testUser);
         repo.save(adminUser);
 
         tokenTestUser = JwtUtil.generateToken(testUser.getUsername(),testUser.getRole());
         tokenAdminUser = JwtUtil.generateToken(adminUser.getUsername(),adminUser.getRole());
 
-        Account testAccount = new Account(null,12569875L,20000L,"ZAR",testUser);
+        testAccount = new Account(testUser.getId());
         repoA.save(testAccount);
 
     }
@@ -68,34 +70,23 @@ public class AccountControllerIntegrationTest {
     class CreateAccount {
         @Test
         void testCreateAccount_Success() throws Exception {
-            PostAccountDto dto = new PostAccountDto(1000L,"USD");
+            PostAccountDto dto = new PostAccountDto(1000L);
 
             mvc.perform(post("/account")
                             .header("Authorization", "Bearer " + tokenTestUser)
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(mapper.writeValueAsString(dto)))
                     .andExpect(status().isCreated())
-                    .andExpect(jsonPath("$.balance").value(1000L))
-                    .andExpect(jsonPath("$.currency").value("USD"));
+                    .andExpect(jsonPath("$.balance").value(0))
+                    .andExpect(jsonPath("$.currency").value("ZAR"));
 
 
         }
 
-        @Test
-        void testCreateAccount_FailBadRequestNoCurrency() throws Exception {
-            PostAccountDto dto = new PostAccountDto(1000L,null);
-
-            mvc.perform(post("/account")
-                            .header("Authorization", "Bearer " + tokenTestUser)
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(mapper.writeValueAsString(dto)))
-                    .andExpect(status().isBadRequest());
-
-        }
 
         @Test
         void testCreateAccount_FailBadRequestNoBalance() throws Exception {
-            PostAccountDto dto = new PostAccountDto(null,"USD");
+            PostAccountDto dto = new PostAccountDto(null);
 
             mvc.perform(post("/account")
                             .header("Authorization", "Bearer " + tokenTestUser)
@@ -107,7 +98,7 @@ public class AccountControllerIntegrationTest {
 
         @Test
         void testCreateAccount_FailBadRequestBalanceNegative() throws Exception {
-            PostAccountDto dto = new PostAccountDto(-7000L,"USD");
+            PostAccountDto dto = new PostAccountDto(-7000L);
 
             mvc.perform(post("/account")
                             .header("Authorization", "Bearer " + tokenTestUser)
@@ -127,7 +118,7 @@ public class AccountControllerIntegrationTest {
             mvc.perform(get("/account/1")
                             .header("Authorization", "Bearer " + tokenTestUser))
                     .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.balance").value(20000L))
+                    .andExpect(jsonPath("$.balance").value(0))
                     .andExpect(jsonPath("$.currency").value("ZAR"));
         }
 
@@ -136,7 +127,7 @@ public class AccountControllerIntegrationTest {
             mvc.perform(get("/account/1")
                             .header("Authorization", "Bearer " + tokenAdminUser))
                     .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.balance").value(20000L))
+                    .andExpect(jsonPath("$.balance").value(0))
                     .andExpect(jsonPath("$.currency").value("ZAR"));
         }
 
@@ -160,19 +151,21 @@ public class AccountControllerIntegrationTest {
     class GetByAccountNum{
         @Test
         void testGetByAccountNum_Success() throws Exception {
-            mvc.perform(get("/account/accountNum/12569875")
+            String accountNum = testAccount.getAccountNum().toString();
+            mvc.perform(get("/account/accountNum/"+accountNum)
                             .header("Authorization", "Bearer " + tokenTestUser))
                     .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.balance").value(20000L))
+                    .andExpect(jsonPath("$.balance").value(0))
                     .andExpect(jsonPath("$.currency").value("ZAR"));
         }
 
         @Test
         void testGetByAccountNum_SuccessAdmin() throws Exception {
-            mvc.perform(get("/account/accountNum/12569875")
+            String accountNum = testAccount.getAccountNum().toString();
+            mvc.perform(get("/account/accountNum/"+accountNum)
                             .header("Authorization", "Bearer " + tokenAdminUser))
                     .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.balance").value(20000L))
+                    .andExpect(jsonPath("$.balance").value(0))
                     .andExpect(jsonPath("$.currency").value("ZAR"));
         }
 
@@ -185,7 +178,8 @@ public class AccountControllerIntegrationTest {
 
         @Test
         void testGetByAccountNum_FailUnAuthorized() throws Exception {
-            mvc.perform(get("/account/accountNum/12569875"))
+            String accountNum = testAccount.getAccountNum().toString();
+            mvc.perform(get("/account/accountNum/"+ accountNum))
                     .andExpect(status().isUnauthorized());
         }
 

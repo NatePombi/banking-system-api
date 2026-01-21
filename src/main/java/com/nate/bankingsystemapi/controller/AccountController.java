@@ -35,7 +35,7 @@ public class AccountController {
     })
     @PostMapping
     public ResponseEntity<AccountDto> create(@RequestBody @Valid PostAccountDto dto, @AuthenticationPrincipal CustomerDetails details){
-        return ResponseEntity.status(HttpStatus.CREATED).body(service.createAccount(dto,details.getUsername()));
+        return ResponseEntity.status(HttpStatus.CREATED).body(service.createAccount(dto,details.getUser().getId()));
     }
 
 
@@ -48,7 +48,7 @@ public class AccountController {
     })
     @GetMapping("/{id}")
     public ResponseEntity<AccountDto> getById(@PathVariable Long id, @AuthenticationPrincipal CustomerDetails details){
-        return ResponseEntity.ok().body(service.getAccountById(id,details.getUsername()));
+        return ResponseEntity.ok().body(service.getAccountById(id,details.getUser().getId()));
     }
 
     @Operation(summary = "Finding Account by Account number")
@@ -60,7 +60,7 @@ public class AccountController {
     })
     @GetMapping("/accountNum/{accountNum}")
     public ResponseEntity<AccountDto> getByAccountNumber(@PathVariable Long accountNum, @AuthenticationPrincipal CustomerDetails details){
-        return ResponseEntity.ok().body(service.getAccountByAccountNumber(accountNum,details.getUsername()));
+        return ResponseEntity.ok().body(service.getAccountByAccountNumber(accountNum,details.getUser().getId()));
     }
 
     @Operation(summary = "Fetching a Paginated List of User Accounts")
@@ -75,7 +75,7 @@ public class AccountController {
                                                                             @RequestParam(defaultValue = "5") int size,
                                                                             @RequestParam(defaultValue = "id") String sortBy,
                                                                             @RequestParam(defaultValue = "desc") String direction){
-        Page<AccountDto> accountDtoPage = service.getAllUserAccount(details.getUsername(),page,size,sortBy,direction);
+        Page<AccountDto> accountDtoPage = service.getAllUserAccount(details.getUser().getId(), page,size,sortBy,direction);
 
         PaginatedResponse<AccountDto> response = new PaginatedResponse<>(
                 accountDtoPage.getContent(),

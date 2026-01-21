@@ -7,8 +7,9 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.UUID;
+
 @Schema(description = "Deposit or Withdraw Request")
-@AllArgsConstructor
 @Getter
 @Setter
 public class FundsRequest {
@@ -22,5 +23,11 @@ public class FundsRequest {
     @Schema(description = "Unique UUID to prevent duplicate requests")
     @NotNull(message = "Missing UUID")
     private String requestID;
+
+    public FundsRequest(Long accountNum, Long amount, String requestID) {
+        this.accountNum = accountNum;
+        this.amount = amount;
+        this.requestID = requestID;
+    }
 
 }
