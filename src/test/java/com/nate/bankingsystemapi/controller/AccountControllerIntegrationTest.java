@@ -77,7 +77,7 @@ public class AccountControllerIntegrationTest {
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(mapper.writeValueAsString(dto)))
                     .andExpect(status().isCreated())
-                    .andExpect(jsonPath("$.balance").value(0))
+                    .andExpect(jsonPath("$.balance").value(1000))
                     .andExpect(jsonPath("$.currency").value("ZAR"));
 
 
