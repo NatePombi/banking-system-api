@@ -316,7 +316,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n    \"balance\": 0,\r\n    \"currency\": \"USD\"\r\n}",
+							"raw": "{\r\n    \"balance\": 1000\r\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -343,7 +343,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\r\n    \"balance\": 0,\r\n    \"currency\": \"USD\"\r\n}",
+									"raw": "{\r\n    \"balance\": 1000\r\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -364,7 +364,7 @@
 							},
 							"status": "Created",
 							"code": 201,
-							"_postman_previewlanguage": null,
+							"_postman_previewlanguage": "",
 							"header": [
 								{
 									"key": "Vary",
@@ -412,7 +412,7 @@
 								},
 								{
 									"key": "Date",
-									"value": "Thu, 25 Dec 2025 20:06:24 GMT"
+									"value": "Wed, 21 Jan 2026 19:24:23 GMT"
 								},
 								{
 									"key": "Keep-Alive",
@@ -424,7 +424,7 @@
 								}
 							],
 							"cookie": [],
-							"body": "{\n    \"id\": 1,\n    \"balance\": 0,\n    \"currency\": \"USD\",\n    \"user\": 2\n}"
+							"body": "{\n    \"id\": 2,\n    \"accountNum\": 9685675152,\n    \"balance\": 1000,\n    \"currency\": \"ZAR\",\n    \"user\": 2\n}"
 						}
 					]
 				},
@@ -511,7 +511,7 @@
 							},
 							"status": "OK",
 							"code": 200,
-							"_postman_previewlanguage": null,
+							"_postman_previewlanguage": "",
 							"header": [
 								{
 									"key": "Vary",
@@ -559,7 +559,7 @@
 								},
 								{
 									"key": "Date",
-									"value": "Thu, 25 Dec 2025 20:06:36 GMT"
+									"value": "Wed, 21 Jan 2026 19:24:04 GMT"
 								},
 								{
 									"key": "Keep-Alive",
@@ -571,7 +571,7 @@
 								}
 							],
 							"cookie": [],
-							"body": "{\n    \"id\": 1,\n    \"balance\": 0,\n    \"currency\": \"USD\",\n    \"user\": 2\n}"
+							"body": "{\n    \"id\": 1,\n    \"accountNum\": 9035306983,\n    \"balance\": 0,\n    \"currency\": \"ZAR\",\n    \"user\": 2\n}"
 						}
 					]
 				},
@@ -642,7 +642,7 @@
 							},
 							"status": "OK",
 							"code": 200,
-							"_postman_previewlanguage": null,
+							"_postman_previewlanguage": "",
 							"header": [
 								{
 									"key": "Vary",
@@ -690,7 +690,7 @@
 								},
 								{
 									"key": "Date",
-									"value": "Thu, 25 Dec 2025 20:06:53 GMT"
+									"value": "Wed, 21 Jan 2026 19:25:50 GMT"
 								},
 								{
 									"key": "Keep-Alive",
@@ -702,7 +702,122 @@
 								}
 							],
 							"cookie": [],
-							"body": "{\n    \"data\": [\n        {\n            \"id\": 1,\n            \"balance\": 0,\n            \"currency\": \"USD\",\n            \"user\": 2\n        }\n    ],\n    \"currentPage\": 0,\n    \"totalPages\": 1,\n    \"totalItems\": 1,\n    \"last\": true\n}"
+							"body": "{\n    \"data\": [\n        {\n            \"id\": 2,\n            \"accountNum\": 9685675152,\n            \"balance\": 1000,\n            \"currency\": \"ZAR\",\n            \"user\": 2\n        },\n        {\n            \"id\": 1,\n            \"accountNum\": 9035306983,\n            \"balance\": 0,\n            \"currency\": \"ZAR\",\n            \"user\": 2\n        }\n    ],\n    \"currentPage\": 0,\n    \"totalPages\": 1,\n    \"totalItems\": 2,\n    \"last\": true\n}"
+						}
+					]
+				},
+				{
+					"name": "Get Account by Account number =",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwtToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/account/accountNum/9035306983",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"account",
+								"accountNum",
+								"9035306983"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "Get Account by Account number =",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "http://localhost:8080/account/accountNum/9035306983",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8080",
+									"path": [
+										"account",
+										"accountNum",
+										"9035306983"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "",
+							"header": [
+								{
+									"key": "Vary",
+									"value": "Origin"
+								},
+								{
+									"key": "Vary",
+									"value": "Access-Control-Request-Method"
+								},
+								{
+									"key": "Vary",
+									"value": "Access-Control-Request-Headers"
+								},
+								{
+									"key": "X-Content-Type-Options",
+									"value": "nosniff"
+								},
+								{
+									"key": "X-XSS-Protection",
+									"value": "0"
+								},
+								{
+									"key": "Cache-Control",
+									"value": "no-cache, no-store, max-age=0, must-revalidate"
+								},
+								{
+									"key": "Pragma",
+									"value": "no-cache"
+								},
+								{
+									"key": "Expires",
+									"value": "0"
+								},
+								{
+									"key": "X-Frame-Options",
+									"value": "DENY"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Transfer-Encoding",
+									"value": "chunked"
+								},
+								{
+									"key": "Date",
+									"value": "Wed, 21 Jan 2026 19:24:58 GMT"
+								},
+								{
+									"key": "Keep-Alive",
+									"value": "timeout=60"
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"id\": 1,\n    \"accountNum\": 9035306983,\n    \"balance\": 0,\n    \"currency\": \"ZAR\",\n    \"user\": 2\n}"
 						}
 					]
 				}
@@ -741,7 +856,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n    \"fromAccount\": 1,\r\n    \"toAccount\": 2,\r\n    \"amount\": 100,\r\n    \"requestID\": \"UU12X\"\r\n}",
+							"raw": "{\r\n    \"fromAccount\": 9685675152,\r\n    \"toAccount\": 9035306983,\r\n    \"amount\": 100,\r\n    \"requestID\": \"UU1g2X\"\r\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -769,7 +884,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\r\n    \"fromAccount\": 1,\r\n    \"toAccount\": 2,\r\n    \"amount\": 100,\r\n    \"requestID\": \"UU12X\"\r\n}",
+									"raw": "{\r\n    \"fromAccount\": 9685675152,\r\n    \"toAccount\": 9035306983,\r\n    \"amount\": 100,\r\n    \"requestID\": \"UU1g2X\"\r\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -839,7 +954,7 @@
 								},
 								{
 									"key": "Date",
-									"value": "Fri, 26 Dec 2025 01:18:22 GMT"
+									"value": "Wed, 21 Jan 2026 19:30:33 GMT"
 								},
 								{
 									"key": "Keep-Alive",
@@ -851,7 +966,7 @@
 								}
 							],
 							"cookie": [],
-							"body": "{\n    \"id\": 2,\n    \"amount\": 100,\n    \"fromAccount\": 1,\n    \"toAccount\": 2,\n    \"status\": \"SUCCESS\"\n}"
+							"body": "{\n    \"id\": 1,\n    \"amount\": 100,\n    \"fromAccount\": 9685675152,\n    \"toAccount\": 9035306983,\n    \"status\": \"SUCCESS\"\n}"
 						}
 					]
 				},
@@ -885,7 +1000,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n    \"accountId\": 1,\r\n    \"amount\": 10000,\r\n    \"requestID\": \"uuxs\"\r\n}",
+							"raw": "{\r\n    \"accountNum\":9035306983,\r\n    \"amount\": 10000,\r\n    \"requestID\": \"34325391s\"\r\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -935,7 +1050,7 @@
 							},
 							"status": "OK",
 							"code": 200,
-							"_postman_previewlanguage": "",
+							"_postman_previewlanguage": null,
 							"header": [
 								{
 									"key": "Vary",
@@ -1029,7 +1144,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n    \"accountId\": 1,\r\n    \"amount\": 100,\r\n    \"requestID\": \"uuidX\"\r\n}",
+							"raw": "{\r\n    \"accountNum\": 9035306983,\r\n    \"amount\": 100,\r\n    \"requestID\": \"uuidX\"\r\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -1079,7 +1194,7 @@
 							},
 							"status": "OK",
 							"code": 200,
-							"_postman_previewlanguage": "",
+							"_postman_previewlanguage": null,
 							"header": [
 								{
 									"key": "Vary",

@@ -10,7 +10,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-@AllArgsConstructor
+import java.util.UUID;
+
 @NoArgsConstructor
 @Setter
 @Getter
@@ -28,5 +29,12 @@ public class TransferRequest {
     @Schema(description = "Unique UUID to prevent duplicate requests")
     @NotNull(message = "Missing UUID")
     private String requestID;
+
+    public TransferRequest(Long fromAccount, Long toAccount, Long amount, String requestID) {
+        this.fromAccount = fromAccount;
+        this.toAccount = toAccount;
+        this.amount = amount;
+        this.requestID = requestID;
+    }
 
 }

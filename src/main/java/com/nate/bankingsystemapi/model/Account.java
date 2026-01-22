@@ -1,13 +1,13 @@
 package com.nate.bankingsystemapi.model;
 
+import com.nate.bankingsystemapi.util.JwtUtil;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Min;
 import lombok.*;
 
 @Entity
-@AllArgsConstructor
 @NoArgsConstructor
-@Data
+@Getter
 public class Account {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -19,7 +19,32 @@ public class Account {
     private Long balance;
     @Column(nullable = false)
     private String currency;
-    @ManyToOne(optional = false)
-    private User user;
+    @Column(nullable = false)
+    private Long userId;
+
+    public Account(Long userId) {
+        this.accountNum = JwtUtil.generateAccNum();
+        this.balance = 0L;
+        this.currency = "ZAR";
+        this.userId = userId;
+    }
+
+     Account(Long id, Long userId) {
+        this.id = id;
+        this.accountNum = JwtUtil.generateAccNum();
+        this.balance = 0L;
+        this.currency = "ZAR";
+        this.userId = userId;
+    }
+
+    public void changeBalance(Long balance) {
+        this.balance = balance;
+    }
+
+    public void changeCurrency(String currency) {
+        this.currency = currency;
+    }
+
+
 
 }

@@ -16,9 +16,9 @@ import java.util.Optional;
 public interface AccountRepository extends JpaRepository<Account,Long> {
 
 
-    Page<Account> findByUserUsername(String username, Pageable pageable);
+    Page<Account> findByUserId(Long userId, Pageable pageable);
 
-    List<Account> user(User user);
+   // List<Account> user(User user);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select a from Account a where a.accountNum = :accNum")

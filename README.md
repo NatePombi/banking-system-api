@@ -61,6 +61,7 @@ Supports account management, money transfers, ledger entries, and audit logging 
 * Docker & Docker Compose (with Postgres)
 
 * Analytics dashboard (product stock levels, sales trends, etc.)
+* Adding End points for Ledger entry and Audit Logs
 
 --- 
 ### Environment Variable
@@ -195,8 +196,7 @@ Create Account
 **POST** `/account`
 ```json
 {
-  "balance": 0,
-  "currency": "USD"
+  "balance": 0
 }
 ```
 
@@ -206,9 +206,8 @@ Response:
   "id": 1,
   "accountNum": 1306192354,
   "balance": 0,
-  "currency": "USD",
-  "user": 2,
-  "integer": 0
+  "currency": "ZAR",
+  "user": 2
 }
 ```
 

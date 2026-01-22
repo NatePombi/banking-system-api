@@ -6,8 +6,7 @@ import lombok.*;
 
 
 @Entity
-@Data
-@AllArgsConstructor
+@Getter
 @NoArgsConstructor
 @Table(name = "users")
 public class User {
@@ -22,4 +21,25 @@ public class User {
     private String password;
     @Enumerated(EnumType.STRING)
     private Role role;
+
+    public User(String fullName, String username, String password) {
+        this.fullName = fullName;
+        this.username = username;
+        this.password = password;
+        this.role = Role.USER;
+    }
+
+
+      User(Long id, String fullName, String username, String password) {
+        this.id = id;
+        this.fullName = fullName;
+        this.username = username;
+        this.password = password;
+        this.role = Role.USER;
+    }
+
+    public void changeRole(Role role) {
+        this.role = role;
+    }
+
 }

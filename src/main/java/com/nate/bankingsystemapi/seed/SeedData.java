@@ -18,11 +18,8 @@ public class SeedData implements CommandLineRunner {
     @Override
     public void run(String... args) throws Exception {
         if(repo.findByUsername("admin").isEmpty()){
-            User user = new User();
-            user.setFullName("Admin User");
-            user.setUsername("admin");
-            user.setPassword(encoder.encode("admin123"));
-            user.setRole(Role.ADMIN);
+            User user = new User("Admin User","admin",encoder.encode("admin123"));
+            user.changeRole(Role.ADMIN);
             repo.save(user);
 
             System.out.println("Default admin created: username = admin, password = admin123");
