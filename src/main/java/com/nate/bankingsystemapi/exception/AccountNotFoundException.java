@@ -9,4 +9,8 @@ public class AccountNotFoundException extends RuntimeException {
         super("Account with that account number was not found");
     }
 
+    public AccountNotFoundException(String username) {
+        super("There is no accounts owned by " + username);
+    }
+
 }

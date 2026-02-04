@@ -3,6 +3,7 @@ package com.nate.bankingsystemapi.repository;
 import com.nate.bankingsystemapi.model.Account;
 import com.nate.bankingsystemapi.model.User;
 import jakarta.persistence.LockModeType;
+import jakarta.persistence.QueryHint;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -10,20 +11,24 @@ import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-import java.util.List;
 import java.util.Optional;
 
 public interface AccountRepository extends JpaRepository<Account,Long> {
 
 
-    Page<Account> findByUserId(Long userId, Pageable pageable);
+    Page<Account> findByUser(User user, Pageable pageable);
 
-   // List<Account> user(User user);
+
+    boolean existsByUser(User user);
+
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select a from Account a where a.accountNum = :accNum")
     Optional<Account> findByAccountNumForUpdate(@Param("accNum") Long accNum);
 
-
-    Optional<Account> findByAccountNum(Long accNum);
+    @Query("""
+            SELECT a FROM Account a
+            WHERE a.accountNum = :accountNum
+            """)
+    Optional<Account> findByAccountNum(@Param("accountNum") Long accountNum);
 }
