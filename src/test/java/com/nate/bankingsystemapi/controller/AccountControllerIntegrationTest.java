@@ -60,7 +60,7 @@ public class AccountControllerIntegrationTest {
         tokenTestUser = JwtUtil.generateToken(testUser.getUsername(),testUser.getRole());
         tokenAdminUser = JwtUtil.generateToken(adminUser.getUsername(),adminUser.getRole());
 
-        testAccount = new Account(testUser.getId());
+        testAccount = new Account(testUser);
         repoA.save(testAccount);
 
     }

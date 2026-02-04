@@ -16,5 +16,5 @@ public class AccountDto {
     private Long accountNum;
     private Long balance;
     private String currency;
-    private Long user;
+    private Long userId;
 }

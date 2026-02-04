@@ -10,14 +10,17 @@ import com.nate.bankingsystemapi.mapper.TransactionMapper;
 import com.nate.bankingsystemapi.model.*;
 import com.nate.bankingsystemapi.repository.*;
 import lombok.AllArgsConstructor;
+import org.flywaydb.core.api.logging.ProgressBar;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.Optional;
+import java.util.Properties;
 
 @Service
 @AllArgsConstructor
@@ -28,15 +31,22 @@ public class TransactionService implements ITransactionService {
     private final UserRepository repoU;
     private final LedgerEntryRepository repoT;
     private final AuditLogRepository auditLogRepo;
+    private final TransactionFailureService transactionFailureService;
 
 
     @Transactional(isolation = Isolation.READ_COMMITTED)
     @Override
-    public TransactionDto transfer(TransferRequest request, Long userId) {
+    public TransactionDto transfer(TransferRequest request, User user) {
 
-        //Fetches User, throws exception if not found
-        User user = repoU.findById(userId)
-                .orElseThrow(() -> new UserNotFoundException(userId));
+        //throws exception if User not found
+        if(!repoU.existsByIdAndUsername(user.getId(),user.getUsername())) {
+            throw new UserNotFoundException(user);
+        }
+
+        //throws exception if User does not have any accounts
+        if(!repoA.existsByUser(user)) {
+            throw new AccountNotFoundException(user.getUsername());
+        }
 
         //Create Transaction Record
         Transactions transactions = new Transactions(request.getAmount(),user.getUsername(), request.getRequestID());
@@ -45,26 +55,22 @@ public class TransactionService implements ITransactionService {
             repo.save(transactions);
         }
         catch (DataIntegrityViolationException e){
-            Optional<Transactions> existing = repo.findByRequestIDAndUsername(request.getRequestID(), user.getUsername());
-            return TransactionMapper.toDto(existing.get());
+            throw new DuplicateRequestException("Request already processed");
         }
 
         //Checks if transferring to the same account, throws exception if you are
         if (request.getFromAccount() == null || request.getToAccount() == null) {
-            transactions.changeStatus(Status.FAILED);
-            repo.save(transactions);
+            transactionFailureService.recordFailure(transactions);
             throw new IllegalArgumentException("Account ids must be provided");
         }
 
         if(request.getFromAccount().equals(request.getToAccount())){
-            transactions.changeStatus(Status.FAILED);
-            repo.save(transactions);
+            transactionFailureService.recordFailure(transactions);
             throw new IllegalArgumentException("Cannot Transfer to the same account");
         }
 
         if (request.getAmount() == null || request.getAmount() <= 0) {
-            transactions.changeStatus(Status.FAILED);
-            repo.save(transactions);
+            transactionFailureService.recordFailure(transactions);
             throw new IllegalArgumentException("Amount must be > 0");
         }
 
@@ -85,15 +91,14 @@ public class TransactionService implements ITransactionService {
         Account toAccount = (firstLockId.equals(request.getToAccount())) ? first : second;
 
         //Checks ownership of from account
-        if(!fromAccount.getUserId().equals(user.getId())){
+        if(!fromAccount.getUser().getId().equals(user.getId())){
             throw new AccessDeniedException("Unauthorized Access");
         }
 
 
         //Checks if balance is enough for transfer
         if(fromAccount.getBalance()< request.getAmount()){
-            transactions.changeStatus(Status.FAILED);
-            repo.save(transactions);
+            transactionFailureService.recordFailure(transactions);
             throw new IllegalArgumentException("Insufficient Balance");
         }
 
@@ -126,11 +131,13 @@ public class TransactionService implements ITransactionService {
 
     @Transactional(isolation = Isolation.READ_COMMITTED)
     @Override
-    public String depositFunds(FundsRequest req, Long userId) {
+    public String depositFunds(FundsRequest req, User user) {
 
-        //fetching user by username, throws exception if not found
-        User user = repoU.findById(userId)
-                .orElseThrow(()-> new UserNotFoundException(userId));
+        //throws exception if User not found
+        if(!repoU.existsByIdAndUsername(user.getId(),user.getUsername())) {
+            throw new UserNotFoundException(user);
+        }
+
 
         //Create transaction (Idempotency gate)
         Transactions transactions = new Transactions(req.getAmount(),user.getUsername(), req.getRequestID());
@@ -148,9 +155,8 @@ public class TransactionService implements ITransactionService {
                 .orElseThrow(AccountNotFoundException::new);
 
         //checks if user ownership, throws exception if user not owner
-        if(!acc.getUserId().equals(user.getId())){
-            transactions.changeStatus(Status.FAILED);
-            repo.save(transactions);
+        if(!acc.getUser().getId().equals(user.getId())){
+            transactionFailureService.recordFailure(transactions);
             throw new AccessDeniedException("Unauthorized Access");
         }
 
@@ -172,11 +178,13 @@ public class TransactionService implements ITransactionService {
 
     @Transactional(isolation = Isolation.READ_COMMITTED)
     @Override
-    public String withdrawFunds(FundsRequest req, Long userId) {
+    public String withdrawFunds(FundsRequest req, User user) {
 
-        //fetching user by username, throws exception if not found
-        User user = repoU.findById(userId)
-                .orElseThrow(()-> new UserNotFoundException(userId));
+        //throws exception if User not found
+        if(!repoU.existsByIdAndUsername(user.getId(),user.getUsername())) {
+            throw new UserNotFoundException(user);
+        }
+
 
         // Creating transaction (Idempotency gate)
         Transactions transactions = new Transactions(req.getAmount(),user.getUsername(), req.getRequestID());
@@ -193,17 +201,15 @@ public class TransactionService implements ITransactionService {
                 .orElseThrow(AccountNotFoundException::new);
 
         //checks if user ownership, throws exception if user not owner
-        if(!acc.getUserId().equals(user.getId())){
-            transactions.changeStatus(Status.FAILED);
-            repo.save(transactions);
+        if(!acc.getUser().getId().equals(user.getId())){
+            transactionFailureService.recordFailure(transactions);
             throw new AccessDeniedException("Unauthorized Access");
         }
 
 
         //Checks if amount is enough for withdraw, throws exception if amount insufficient
         if(acc.getBalance() < req.getAmount()) {
-            transactions.changeStatus(Status.FAILED);
-            repo.save(transactions);
+            transactionFailureService.recordFailure(transactions);
             throw new IllegalArgumentException("Insufficient balance");
         }
 
@@ -243,6 +249,8 @@ public class TransactionService implements ITransactionService {
         debit.setCreateAt(Instant.now());
         repoT.save(debit);
     }
+
+
 
 
 }

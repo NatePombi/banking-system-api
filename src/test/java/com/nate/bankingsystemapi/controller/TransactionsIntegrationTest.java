@@ -59,9 +59,9 @@ public class TransactionsIntegrationTest {
 
         token = JwtUtil.generateToken(testUser.getUsername(),testUser.getRole());
 
-         testAccount1 = new Account(testUser.getId());
+         testAccount1 = new Account(testUser);
          testAccount1.changeBalance(10000L);
-         testAccount2 = new Account(testUser.getId());
+         testAccount2 = new Account(testUser);
 
         repoA.save(testAccount1);
         repoA.save(testAccount2);

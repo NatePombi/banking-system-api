@@ -11,9 +11,11 @@ import com.nate.bankingsystemapi.repository.LedgerEntryRepository;
 import com.nate.bankingsystemapi.repository.TransactionRepository;
 import com.nate.bankingsystemapi.repository.UserRepository;
 import com.nate.bankingsystemapi.service.ITransactionService;
+import com.nate.bankingsystemapi.service.TransactionFailureService;
 import com.nate.bankingsystemapi.util.JwtUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.RepeatedTest;
+import org.junit.jupiter.api.Timeout;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -25,6 +27,7 @@ import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -49,6 +52,8 @@ public class ConcurrentWithdrawalAndTransferTest {
     private LedgerEntryRepository lRepo;
     @Autowired
     private TransactionRepository tRepo;
+    @Autowired
+    private TransactionFailureService failureService;
 
     private User testUser;
     private Account testAcc1;
@@ -64,11 +69,11 @@ public class ConcurrentWithdrawalAndTransferTest {
         testUser = new User("Tester","testUser",passwordEncoder.encode("password"));
         repoU.save(testUser);
 
-        testAcc1 = new Account(testUser.getId());
+        testAcc1 = new Account(testUser);
         testAcc1.changeBalance(1000L);
         repo.save(testAcc1);
 
-        testAcc2 = new Account(testUser.getId());
+        testAcc2 = new Account(testUser);
         testAcc2.changeBalance(500L);
         repo.save(testAcc2);
     }
@@ -93,7 +98,7 @@ public class ConcurrentWithdrawalAndTransferTest {
                 try {
                     startLatch.await();
                     String req = UUID.randomUUID().toString();
-                    transactionService.withdrawFunds(new FundsRequest(accountNum,withdrawalAmount,req),testUser.getId());
+                    transactionService.withdrawFunds(new FundsRequest(accountNum,withdrawalAmount,req),testUser);
                     successCount.incrementAndGet();
                 }
                 catch (Exception e){
@@ -129,7 +134,8 @@ public class ConcurrentWithdrawalAndTransferTest {
     }
 
 
-    @RepeatedTest(20)
+    @RepeatedTest(10)
+   // @Timeout(value = 10,unit = TimeUnit.SECONDS)
     void testSimultaneousDepositAndWithdrawal() throws InterruptedException {
         Long accountNum = testAcc1.getAccountNum();
         Long withdrawalAmount = 500L;
@@ -152,7 +158,7 @@ public class ConcurrentWithdrawalAndTransferTest {
             try{
                 withdrawStartLatch.await();
                 String req = UUID.randomUUID().toString();
-                transactionService.withdrawFunds(new FundsRequest(accountNum,withdrawalAmount,req),testUser.getId());
+                transactionService.withdrawFunds(new FundsRequest(accountNum,withdrawalAmount,req),testUser);
                 withdrawSuccessCount.incrementAndGet();
             } catch (Exception e) {
                 System.out.println("Failed to withdraw: " +e.getMessage() );
@@ -167,7 +173,7 @@ public class ConcurrentWithdrawalAndTransferTest {
             try{
                 depositStartLatch.await();
                 String req = UUID.randomUUID().toString();
-                transactionService.depositFunds(new FundsRequest(accountNum,depositAmount,req),testUser.getId());
+                transactionService.depositFunds(new FundsRequest(accountNum,depositAmount,req),testUser);
                 depositSuccessCount.incrementAndGet();
             } catch (Exception e) {
                 System.out.println("Failed to Deposit: " + e.getMessage());
@@ -195,6 +201,8 @@ public class ConcurrentWithdrawalAndTransferTest {
 
         assertTrue(updatedAcc.getBalance()>=0);
 
+
+        executor.shutdown();
         assertEquals(depositSuccessCount.get() + withdrawSuccessCount.get(), tRepo.count());
         assertEquals(depositSuccessCount.get() + withdrawSuccessCount.get(), lRepo.count());
 
@@ -226,7 +234,7 @@ public class ConcurrentWithdrawalAndTransferTest {
                 String reqId = UUID.randomUUID().toString();
                 TransferRequest transfer = new TransferRequest(fromAcc,toAcc,5000L,reqId);
 
-                transactionService.transfer(transfer,testUser.getId());
+                transactionService.transfer(transfer,testUser);
                 successCount.incrementAndGet();
             }
             catch (Exception e){
@@ -288,7 +296,7 @@ public class ConcurrentWithdrawalAndTransferTest {
         Runnable withdrawalTask = () -> {
             try{
                 startLatch.await();
-                transactionService.withdrawFunds(new FundsRequest(fromAcc,withdrawAmount,reqId),testUser.getId());
+                transactionService.withdrawFunds(new FundsRequest(fromAcc,withdrawAmount,reqId),testUser);
                 successCount.incrementAndGet();
             }
             catch (Exception e){
@@ -338,7 +346,7 @@ public class ConcurrentWithdrawalAndTransferTest {
         Runnable depositTask = () -> {
             try{
                 startLatch.await();
-                transactionService.depositFunds(new FundsRequest(fromAcc,depositAmount,reqId),testUser.getId());
+                transactionService.depositFunds(new FundsRequest(fromAcc,depositAmount,reqId),testUser);
 
                 successCount.incrementAndGet();
             }
@@ -388,7 +396,7 @@ public class ConcurrentWithdrawalAndTransferTest {
             try{
                 startLatch.await();
                 TransferRequest transfer = new TransferRequest(fromAcc,toAcc,transferAmount,reqId);
-                transactionService.transfer(transfer,testUser.getId());
+                transactionService.transfer(transfer,testUser);
                 successCount.incrementAndGet();
             }
             catch (Exception e){

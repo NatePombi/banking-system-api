@@ -19,22 +19,23 @@ public class Account {
     private Long balance;
     @Column(nullable = false)
     private String currency;
-    @Column(nullable = false)
-    private Long userId;
+    @ManyToOne(fetch = FetchType.LAZY,optional = false)
+    @JoinColumn(name = "user_id")
+    private User user;
 
-    public Account(Long userId) {
+    public Account(User user) {
         this.accountNum = JwtUtil.generateAccNum();
         this.balance = 0L;
         this.currency = "ZAR";
-        this.userId = userId;
+        this.user = user;
     }
 
-     Account(Long id, Long userId) {
+     Account(Long id, User user) {
         this.id = id;
         this.accountNum = JwtUtil.generateAccNum();
         this.balance = 0L;
         this.currency = "ZAR";
-        this.userId = userId;
+        this.user = user;
     }
 
     public void changeBalance(Long balance) {

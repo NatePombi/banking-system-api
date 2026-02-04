@@ -64,7 +64,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(DuplicateRequestException.class)
-    @ResponseStatus(HttpStatus.OK)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ApiError handleDuplicate(DuplicateRequestException ex, jakarta.servlet.http.HttpServletRequest req){
         return new ApiError(Instant.now(),400,"Duplicate Request",ex.getMessage(),req.getRequestURI());
     }

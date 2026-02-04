@@ -18,7 +18,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.*;
 import org.springframework.security.access.AccessDeniedException;
 
-import java.security.SecureRandom;
 import java.util.List;
 import java.util.Optional;
 
@@ -45,7 +44,7 @@ public class AccountServiceTest {
     @BeforeEach
     void startUp(){
         testUser = new TestUser(1L,"Tester","test","hash-pass");
-        testAccount = new TestAccount(2L,testUser.getId());
+        testAccount = new TestAccount(2L,testUser);
         testAccount.changeBalance(40000L);
         testPost = new PostAccountDto(40000L);
 
@@ -57,10 +56,10 @@ public class AccountServiceTest {
     class CreateAccount {
         @Test
         void testCreateAccount_Success() {
-            when(repoU.existsById(testUser.getId())).thenReturn(true);
+            when(repoU.existsByIdAndUsername(testUser.getId(),testUser.getUsername())).thenReturn(Boolean.TRUE);
             when(repoA.save(any(Account.class))).thenReturn(testAccount);
 
-            AccountDto dto = service.createAccount(testPost, testUser.getId());
+            AccountDto dto = service.createAccount(testPost, testUser);
 
             assertEquals(testPost.getBalance(), dto.getBalance(), "balance should the same");
 
@@ -69,10 +68,10 @@ public class AccountServiceTest {
         @Test
         void testCreateAccount_FailUserNotFound(){
             Exception ex = assertThrows(UserNotFoundException.class,()->{
-                service.createAccount(testPost,testUser.getId());
+                service.createAccount(testPost,testUser);
             });
 
-            assertTrue(ex.getMessage().contains(testUser.getId().toString()));
+            assertTrue(ex.getMessage().contains(testUser.getUsername()));
         }
 
     }
@@ -82,59 +81,59 @@ public class AccountServiceTest {
     class GetAccountById{
         @Test
         void testGetAccountById_Success(){
-            when(repoU.findById(testUser.getId())).thenReturn(Optional.of(testUser));
+            when(repoU.existsByIdAndUsername(testUser.getId(),testUser.getUsername())).thenReturn(Boolean.TRUE);
             when(repoA.findById(2L)).thenReturn(Optional.of(testAccount));
 
-            AccountDto dto = service.getAccountById(2L,testUser.getId());
+            AccountDto dto = service.getAccountById(2L,testUser);
 
             assertNotNull(dto);
 
             assertEquals(testAccount.getBalance(),dto.getBalance(),"should have the same balance");
-            assertEquals(testAccount.getUserId(),dto.getUser(),"should have the same user id");
+            assertEquals(testAccount.getUser().getId(),dto.getUserId(),"should have the same user ID");
         }
 
         @Test
         void testGetAccountById_SuccessEvenIfNotOwner_Admin(){
             User admin = new User("Admin","admin","admin123");
             admin.changeRole(Role.ADMIN);
-            when(repoU.findById(22L)).thenReturn(Optional.of(admin));
+            when(repoU.existsByIdAndUsername(admin.getId(),admin.getUsername())).thenReturn(Boolean.TRUE);
             when(repoA.findById(2L)).thenReturn(Optional.of(testAccount));
 
-            AccountDto dto = service.getAccountById(2L,22L);
+            AccountDto dto = service.getAccountById(2L,admin);
 
             assertNotNull(dto);
 
             assertEquals(testAccount.getBalance(),dto.getBalance(),"should have the same balance");
-            assertEquals(testAccount.getUserId(),dto.getUser(),"should have the same user id");
+            assertEquals(testAccount.getUser().getId(),dto.getUserId(),"should have the same user ID");
         }
 
         @Test
         void testGetAccountById_FailUserNotFound(){
             Exception ex = assertThrows(UserNotFoundException.class,()->{
-                service.getAccountById(2L,12L);
+                service.getAccountById(testAccount.getId(),testUser);
             });
 
-            assertTrue(ex.getMessage().contains("12"));
+            assertTrue(ex.getMessage().contains(testUser.getUsername()));
         }
 
         @Test
         void testGetAccountById_FailAccountNotFound(){
-            when(repoU.findById(12L)).thenReturn(Optional.of(testUser));
+            when(repoU.existsByIdAndUsername(testUser.getId(),testUser.getUsername())).thenReturn(Boolean.TRUE);
+
             Exception ex = assertThrows(AccountNotFoundException.class,()->{
-                service.getAccountById(2L,12L);
+                service.getAccountById(testAccount.getId(),testUser);
             });
 
-            assertTrue(ex.getMessage().contains("2"));
+            assertTrue(ex.getMessage().contains(testAccount.getId().toString()));
         }
 
         @Test
         void testGetAccountById_FailUnauthorized(){
-            User testUser2 = new User("Mark","mark","mark123");
+            User testUser2 = new TestUser(11L,"Mark","mark","mark123");
+            when(repoU.existsByIdAndUsername(testUser2.getId(),testUser2.getUsername())).thenReturn(Boolean.TRUE);
             when(repoA.findById(2L)).thenReturn(Optional.of(testAccount));
-            when(repoU.findById(13L)).thenReturn(Optional.of(testUser2));
-
             assertThrows(AccessDeniedException.class,()->{
-                service.getAccountById(2L,13L);
+                service.getAccountById(testAccount.getId(),testUser2);
             });
 
         }
@@ -146,55 +145,55 @@ public class AccountServiceTest {
     class GetAccountByAccountNum{
         @Test
         void testGetAccountByAccountNum_Success(){
-            when(repoU.findById(2L)).thenReturn(Optional.of(testUser));
+            when(repoU.existsByIdAndUsername(testUser.getId(),testUser.getUsername())).thenReturn(Boolean.TRUE);
             when(repoA.findByAccountNum(testAccount.getAccountNum())).thenReturn(Optional.of(testAccount));
 
-            AccountDto dto = service.getAccountByAccountNumber(testAccount.getAccountNum(),2L);
+            AccountDto dto = service.getAccountByAccountNumber(testAccount.getAccountNum(),testUser);
 
             assertNotNull(dto);
 
             assertEquals(testAccount.getBalance(),dto.getBalance(),"should have the same balance");
-            assertEquals(testAccount.getUserId(),dto.getUser(),"should have the same user ID");
+            assertEquals(testAccount.getUser().getId(),dto.getUserId(),"should have the same user ID");
         }
 
         @Test
         void testGetAccountByAccountNum_SuccessEvenIfNotOwner_Admin(){
             User admin = new TestUser(22L,"Admin","admin","admin123");
             admin.changeRole(Role.ADMIN);
-            when(repoU.findById(22L)).thenReturn(Optional.of(admin));
+            when(repoU.existsByIdAndUsername(admin.getId(),admin.getUsername())).thenReturn(Boolean.TRUE);
             when(repoA.findByAccountNum(testAccount.getAccountNum())).thenReturn(Optional.of(testAccount));
 
-            AccountDto dto = service.getAccountByAccountNumber(testAccount.getAccountNum(),22L);
+            AccountDto dto = service.getAccountByAccountNumber(testAccount.getAccountNum(),admin);
 
             assertNotNull(dto);
 
             assertEquals(testAccount.getBalance(),dto.getBalance(),"should have the same balance");
-            assertEquals(1L,dto.getUser(),"should have the same user id");
+            assertEquals(testAccount.getUser().getId(),dto.getUserId(),"should have the same user ID");
         }
 
         @Test
         void testGetAccountByAccountNum_FailUserNotFound(){
             assertThrows(UserNotFoundException.class,()->{
-                service.getAccountByAccountNumber(3654987L,1L);
+                service.getAccountByAccountNumber(testAccount.getAccountNum(),testUser);
             });
         }
 
         @Test
         void testGetAccountByAccountNum_FailAccountNotFound(){
-            when(repoU.findById(2L)).thenReturn(Optional.of(testUser));
+            when(repoU.existsByIdAndUsername(testUser.getId(),testUser.getUsername())).thenReturn(Boolean.TRUE);
             assertThrows(AccountNotFoundException.class,()->{
-                service.getAccountByAccountNumber(3654987L,2L);
+                service.getAccountByAccountNumber(3654987L,testUser);
             });
         }
 
         @Test
         void testGetAccountByAccountNum_FailUnauthorized(){
-            User testUser2 = new User("Mark","mark","mark123");
-            when(repoA.findByAccountNum(3654987L)).thenReturn(Optional.of(testAccount));
-            when(repoU.findById(11L)).thenReturn(Optional.of(testUser2));
+            User testUser2 = new TestUser(33L,"Mark","mark","mark123");
+            when(repoA.findByAccountNum(testAccount.getAccountNum())).thenReturn(Optional.of(testAccount));
+            when(repoU.existsByIdAndUsername(testUser2.getId(),testUser2.getUsername())).thenReturn(Boolean.TRUE);
 
             assertThrows(AccessDeniedException.class,()->{
-                service.getAccountByAccountNumber(3654987L,11L);
+                service.getAccountByAccountNumber(testAccount.getAccountNum(),testUser2);
             });
 
         }
@@ -210,10 +209,11 @@ public class AccountServiceTest {
             Pageable pageable = PageRequest.of(0,5, Sort.by("id").descending());
             Page<Account> page = new PageImpl<>(List.of(testAccount));
 
-            when(repoU.findById(2L)).thenReturn(Optional.of(testUser));
-            when(repoA.findByUserId(2L,pageable)).thenReturn(page);
+            when(repoU.existsByIdAndUsername(testUser.getId(),testUser.getUsername())).thenReturn(Boolean.TRUE);
+            when(repoA.existsByUser(testUser)).thenReturn(Boolean.TRUE);
+            when(repoA.findByUser(testUser,pageable)).thenReturn(page);
 
-            Page<AccountDto> dto = service.getAllUserAccount(2L,0,5,"id","desc");
+            Page<AccountDto> dto = service.getAllUserAccount(testUser,0,5,"id","desc");
 
             assertNotNull(dto);
             assertEquals(1,dto.getContent().size(),"should contain one Account");
@@ -221,18 +221,19 @@ public class AccountServiceTest {
 
 
         @Test
-        void testGetAllUserAccounts_SuccessAdminFetchesAll(){
-            User admin = new User("Admin","admin","admin123");
+        void  testGetAllUserAccounts_SuccessAdminFetchesAll(){
+            User admin = new TestUser(13L,"Admin","admin","admin123");
             admin.changeRole(Role.ADMIN);
-            Account acc1 = new Account();
-            Account acc2 = new Account();
+            Account acc1 = new Account(testUser);
+            Account acc2 = new Account(testUser);
             Pageable pageable = PageRequest.of(0,5, Sort.by("id").descending());
             Page<Account> page = new PageImpl<>(List.of(testAccount,acc1,acc2));
 
-            when(repoU.findById(23L)).thenReturn(Optional.of(admin));
+            when(repoU.existsByIdAndUsername(admin.getId(),admin.getUsername())).thenReturn(Boolean.TRUE);
+            when(repoA.existsByUser(admin)).thenReturn(Boolean.TRUE);
             when(repoA.findAll(pageable)).thenReturn(page);
 
-            Page<AccountDto> dto = service.getAllUserAccount(23L,0,5,"id","desc");
+            Page<AccountDto> dto = service.getAllUserAccount(admin,0,5,"id","desc");
 
             assertNotNull(dto);
             assertEquals(3,dto.getContent().size(),"should contain one Account");
@@ -242,10 +243,10 @@ public class AccountServiceTest {
         void testGetAllUserAccounts_FailUserNotFound(){
 
             Exception ex = assertThrows(UserNotFoundException.class,()->{
-                service.getAllUserAccount(11L,0,5,"id","desc");
+                service.getAllUserAccount(testUser,0,5,"id","desc");
             });
 
-            assertTrue(ex.getMessage().contains("11"));
+            assertTrue(ex.getMessage().contains(testUser.getUsername()));
         }
 
         @Test
@@ -254,10 +255,11 @@ public class AccountServiceTest {
             Pageable pageable = PageRequest.of(0,5, Sort.by("id").descending());
             Page<Account> page = new PageImpl<>(List.of());
 
-            when(repoU.findById(11L)).thenReturn(Optional.of(testUser));
-            when(repoA.findByUserId(11L,pageable)).thenReturn(page);
+            when(repoU.existsByIdAndUsername(testUser.getId(),testUser.getUsername())).thenReturn(Boolean.TRUE);
+            when(repoA.existsByUser(testUser)).thenReturn(Boolean.TRUE);
+            when(repoA.findByUser(testUser,pageable)).thenReturn(page);
 
-            Page<AccountDto> dto = service.getAllUserAccount(11L,0,5,"id","desc");
+            Page<AccountDto> dto = service.getAllUserAccount(testUser,0,5,"id","desc");
 
             assertTrue(dto.isEmpty());
         }

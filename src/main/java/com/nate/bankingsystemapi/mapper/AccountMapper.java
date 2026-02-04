@@ -16,19 +16,8 @@ public class AccountMapper {
                 acc.getAccountNum(),
                 acc.getBalance(),
                 acc.getCurrency(),
-                acc.getUserId()
+                acc.getUser().getId()
         );
     }
 
-    public static Account toEntity(AccountDto accDto, Long userId){
-        if(accDto == null){
-            return null;
-        }
-
-        Account acc = new Account(userId);
-        acc.changeBalance(accDto.getBalance());
-        acc.changeCurrency(accDto.getCurrency());
-
-        return acc;
-    }
 }
