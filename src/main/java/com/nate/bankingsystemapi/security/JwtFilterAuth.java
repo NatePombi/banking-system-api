@@ -1,7 +1,6 @@
 package com.nate.bankingsystemapi.security;
 
 import com.nate.bankingsystemapi.model.CustomerDetails;
-import com.nate.bankingsystemapi.util.JwtUtil;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -20,6 +19,7 @@ import java.util.Arrays;
 @AllArgsConstructor
 public class JwtFilterAuth  extends OncePerRequestFilter {
     private final UserDetailsService service;
+    private final JwtService jwtService;
     private static final String[] EXCLUDED_PATH ={
             "/auth/login",
             "/auth/register",
@@ -52,12 +52,14 @@ public class JwtFilterAuth  extends OncePerRequestFilter {
 
         String token = authHeader.substring(7);
 
-        if(!JwtUtil.tokenValidation(token)){
+        CustomerDetails details = (CustomerDetails) service.loadUserByUsername(jwtService.extractUsername(token));
+
+
+        if(!jwtService.isTokenValid(token,details.getUser())){
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             response.getWriter().write("Invalid or Expired token");
         }
 
-        CustomerDetails details = (CustomerDetails) service.loadUserByUsername(JwtUtil.extractUsername(token));
         UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(details, null,details.getAuthorities());
 
         SecurityContextHolder.getContext().setAuthentication(auth);
