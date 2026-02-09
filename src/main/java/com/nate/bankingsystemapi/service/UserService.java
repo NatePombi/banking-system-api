@@ -7,10 +7,9 @@ import com.nate.bankingsystemapi.dto.UserDto;
 import com.nate.bankingsystemapi.exception.UserNotFoundException;
 import com.nate.bankingsystemapi.mapper.UserMapper;
 import com.nate.bankingsystemapi.model.CustomerDetails;
-import com.nate.bankingsystemapi.model.Role;
 import com.nate.bankingsystemapi.model.User;
 import com.nate.bankingsystemapi.repository.UserRepository;
-import com.nate.bankingsystemapi.util.JwtUtil;
+import com.nate.bankingsystemapi.security.JwtService;
 import lombok.AllArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,8 +19,6 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.beans.Encoder;
-
 @Service
 @AllArgsConstructor
 public class UserService implements IUserService, UserDetailsService {
@@ -29,6 +26,7 @@ public class UserService implements IUserService, UserDetailsService {
     private final UserRepository repo;
     private final PasswordEncoder encoder;
     private static final Logger log = LoggerFactory.getLogger(UserService.class);
+    private final JwtService service;
 
 
     /**
@@ -65,7 +63,7 @@ public class UserService implements IUserService, UserDetailsService {
         }
 
 
-        String token = JwtUtil.generateToken(customerDetails.getUsername(),customerDetails.getUser().getRole());
+        String token = service.generateToken(customerDetails.getUser());
 
         return new JwtResponse(token);
     }

@@ -1,6 +1,5 @@
 package com.nate.bankingsystemapi.controller;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nate.bankingsystemapi.dto.PostAccountDto;
 import com.nate.bankingsystemapi.model.Account;
@@ -8,9 +7,8 @@ import com.nate.bankingsystemapi.model.Role;
 import com.nate.bankingsystemapi.model.User;
 import com.nate.bankingsystemapi.repository.AccountRepository;
 import com.nate.bankingsystemapi.repository.UserRepository;
-import com.nate.bankingsystemapi.util.JwtUtil;
+import com.nate.bankingsystemapi.security.JwtService;
 import org.junit.jupiter.api.*;
-import org.mockito.Mock;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -42,6 +40,8 @@ public class AccountControllerIntegrationTest {
     private AccountRepository repoA;
     @Autowired
     private PasswordEncoder encoder;
+    @Autowired
+    private JwtService jwtService;
 
     private String tokenTestUser;
     private String tokenAdminUser;
@@ -57,8 +57,8 @@ public class AccountControllerIntegrationTest {
         repo.save(testUser);
         repo.save(adminUser);
 
-        tokenTestUser = JwtUtil.generateToken(testUser.getUsername(),testUser.getRole());
-        tokenAdminUser = JwtUtil.generateToken(adminUser.getUsername(),adminUser.getRole());
+        tokenTestUser = jwtService.generateToken(testUser);
+        tokenAdminUser = jwtService.generateToken(testUser);
 
         testAccount = new Account(testUser);
         repoA.save(testAccount);

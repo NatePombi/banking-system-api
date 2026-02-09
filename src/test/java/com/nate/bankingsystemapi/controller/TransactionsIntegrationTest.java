@@ -1,15 +1,13 @@
 package com.nate.bankingsystemapi.controller;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nate.bankingsystemapi.dto.FundsRequest;
 import com.nate.bankingsystemapi.dto.TransferRequest;
 import com.nate.bankingsystemapi.model.Account;
-import com.nate.bankingsystemapi.model.Role;
 import com.nate.bankingsystemapi.model.User;
 import com.nate.bankingsystemapi.repository.AccountRepository;
 import com.nate.bankingsystemapi.repository.UserRepository;
-import com.nate.bankingsystemapi.util.JwtUtil;
+import com.nate.bankingsystemapi.security.JwtService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -47,6 +45,8 @@ public class TransactionsIntegrationTest {
     private UserRepository repoU;
     @Autowired
     private PasswordEncoder encoder;
+    @Autowired
+    private JwtService jwtService;
 
     private String token;
     private Account testAccount1;
@@ -57,7 +57,7 @@ public class TransactionsIntegrationTest {
         User testUser = new User("Tester","tester",encoder.encode("test123"));
         repoU.save(testUser);
 
-        token = JwtUtil.generateToken(testUser.getUsername(),testUser.getRole());
+        token = jwtService.generateToken(testUser);
 
          testAccount1 = new Account(testUser);
          testAccount1.changeBalance(10000L);

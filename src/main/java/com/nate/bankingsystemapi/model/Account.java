@@ -1,6 +1,6 @@
 package com.nate.bankingsystemapi.model;
 
-import com.nate.bankingsystemapi.util.JwtUtil;
+import com.nate.bankingsystemapi.util.AccountNumGenerator;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Min;
 import lombok.*;
@@ -24,7 +24,7 @@ public class Account {
     private User user;
 
     public Account(User user) {
-        this.accountNum = JwtUtil.generateAccNum();
+        this.accountNum = AccountNumGenerator.generateAccNum();
         this.balance = 0L;
         this.currency = "ZAR";
         this.user = user;
@@ -32,7 +32,7 @@ public class Account {
 
      Account(Long id, User user) {
         this.id = id;
-        this.accountNum = JwtUtil.generateAccNum();
+        this.accountNum = AccountNumGenerator.generateAccNum();
         this.balance = 0L;
         this.currency = "ZAR";
         this.user = user;

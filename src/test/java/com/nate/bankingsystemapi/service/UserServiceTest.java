@@ -8,6 +8,7 @@ import com.nate.bankingsystemapi.model.CustomerDetails;
 import com.nate.bankingsystemapi.model.Role;
 import com.nate.bankingsystemapi.model.User;
 import com.nate.bankingsystemapi.repository.UserRepository;
+import com.nate.bankingsystemapi.security.JwtService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -32,6 +33,8 @@ public class UserServiceTest {
     private UserRepository repo;
     @Mock
     private PasswordEncoder encoder;
+    @Mock
+    private JwtService jwtService;
     @InjectMocks
     private UserService service;
 
@@ -64,6 +67,7 @@ public class UserServiceTest {
         LoginDto login = new LoginDto("test","test123");
 
         when(repo.findByUsername("test")).thenReturn(Optional.of(testUser));
+        when(jwtService.generateToken(testUser)).thenReturn("Valid-Token");
         UserDetails detail = service.loadUserByUsername(login.getUsername());
 
         when(encoder.matches(login.getPassword(),detail.getPassword())).thenReturn(true);
