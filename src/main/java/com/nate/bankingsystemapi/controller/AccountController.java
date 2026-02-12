@@ -31,7 +31,8 @@ public class AccountController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201",description = "account created, returns Account"),
             @ApiResponse(responseCode = "400",description = "Bad Request"),
-            @ApiResponse(responseCode = "403",description = "Forbidden")
+            @ApiResponse(responseCode = "403",description = "Forbidden"),
+            @ApiResponse(responseCode = "422", description = "Unprocessable Entity")
     })
     @PostMapping
     public ResponseEntity<AccountDto> create(@RequestBody @Valid PostAccountDto dto, @AuthenticationPrincipal CustomerDetails details){
@@ -44,7 +45,8 @@ public class AccountController {
             @ApiResponse(responseCode = "200", description = "successfully found account, returns account"),
             @ApiResponse(responseCode = "400", description = "Bad Request"),
             @ApiResponse(responseCode = "403",description = "Forbidden"),
-            @ApiResponse(responseCode = "404",description = "Account not found")
+            @ApiResponse(responseCode = "404",description = "Account not found"),
+            @ApiResponse(responseCode = "422", description = "Unprocessable Entity")
     })
     @GetMapping("/{id}")
     public ResponseEntity<AccountDto> getById(@PathVariable Long id, @AuthenticationPrincipal CustomerDetails details){
@@ -56,7 +58,8 @@ public class AccountController {
             @ApiResponse(responseCode = "200", description = "successfully found account, returns account"),
             @ApiResponse(responseCode = "400", description = "Bad Request"),
             @ApiResponse(responseCode = "403",description = "Forbidden"),
-            @ApiResponse(responseCode = "404",description = "Account not found")
+            @ApiResponse(responseCode = "404",description = "Account not found"),
+            @ApiResponse(responseCode = "422", description = "Unprocessable Entity")
     })
     @GetMapping("/accountNum/{accountNum}")
     public ResponseEntity<AccountDto> getByAccountNumber(@PathVariable Long accountNum, @AuthenticationPrincipal CustomerDetails details){
@@ -67,7 +70,8 @@ public class AccountController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200",description = "successfully returned list of user accounts"),
             @ApiResponse(responseCode = "400",description = "Bad Request"),
-            @ApiResponse(responseCode = "403", description = "Forbidden")
+            @ApiResponse(responseCode = "403", description = "Forbidden"),
+            @ApiResponse(responseCode = "422", description = "Unprocessable Entity")
     })
     @GetMapping
     public ResponseEntity<PaginatedResponse<AccountDto>> getAllUserAccounts(@AuthenticationPrincipal CustomerDetails details,

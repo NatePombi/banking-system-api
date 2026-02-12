@@ -92,7 +92,7 @@ public class AccountControllerIntegrationTest {
                             .header("Authorization", "Bearer " + tokenTestUser)
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(mapper.writeValueAsString(dto)))
-                    .andExpect(status().isBadRequest());
+                    .andExpect(status().isUnprocessableEntity());
 
         }
 
@@ -104,7 +104,7 @@ public class AccountControllerIntegrationTest {
                             .header("Authorization", "Bearer " + tokenTestUser)
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(mapper.writeValueAsString(dto)))
-                    .andExpect(status().isBadRequest());
+                    .andExpect(status().isUnprocessableEntity());
 
         }
 

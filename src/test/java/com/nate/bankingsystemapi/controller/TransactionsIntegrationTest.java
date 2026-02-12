@@ -138,7 +138,7 @@ public class TransactionsIntegrationTest {
                             .header("Authorization", "Bearer " + token)
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(mapper.writeValueAsString(req)))
-                    .andExpect(status().isBadRequest());
+                    .andExpect(status().isUnprocessableEntity());
         }
 
         @Test
@@ -150,7 +150,7 @@ public class TransactionsIntegrationTest {
                             .header("Authorization", "Bearer " + token)
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(mapper.writeValueAsString(req)))
-                    .andExpect(status().isBadRequest());
+                    .andExpect(status().isUnprocessableEntity());
         }
 
 
@@ -162,7 +162,7 @@ public class TransactionsIntegrationTest {
                             .header("Authorization", "Bearer " + token)
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(mapper.writeValueAsString(req)))
-                    .andExpect(status().isBadRequest());
+                    .andExpect(status().isUnprocessableEntity());
         }
 
         @Test
@@ -214,7 +214,7 @@ public class TransactionsIntegrationTest {
                             .header("Authorization", "Bearer " + token)
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(mapper.writeValueAsString(req)))
-                    .andExpect(status().isBadRequest());
+                    .andExpect(status().isUnprocessableEntity());
         }
 
         @Test
@@ -226,7 +226,7 @@ public class TransactionsIntegrationTest {
                             .header("Authorization", "Bearer " + token)
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(mapper.writeValueAsString(req)))
-                    .andExpect(status().isBadRequest());
+                    .andExpect(status().isUnprocessableEntity());
         }
 
 
@@ -238,7 +238,7 @@ public class TransactionsIntegrationTest {
                             .header("Authorization", "Bearer " + token)
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(mapper.writeValueAsString(req)))
-                    .andExpect(status().isBadRequest());
+                    .andExpect(status().isUnprocessableEntity());
         }
 
         @Test

@@ -1,5 +1,6 @@
 package com.nate.bankingsystemapi.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import lombok.*;
@@ -17,6 +18,7 @@ public class User {
     private String fullName;
     @Column(unique = true,nullable = false)
     private String username;
+    @JsonIgnore
     @Column(nullable = false)
     private String password;
     @Enumerated(EnumType.STRING)

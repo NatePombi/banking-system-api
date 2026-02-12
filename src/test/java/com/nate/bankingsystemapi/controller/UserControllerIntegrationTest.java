@@ -57,7 +57,7 @@ public class UserControllerIntegrationTest {
             mvc.perform(post("/auth/register")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(mapper.writeValueAsString(reg)))
-                    .andExpect(status().isBadRequest());
+                    .andExpect(status().isUnprocessableEntity());
         }
 
         @Test
@@ -70,7 +70,7 @@ public class UserControllerIntegrationTest {
             mvc.perform(post("/auth/register")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(mapper.writeValueAsString(reg)))
-                    .andExpect(status().isBadRequest());
+                    .andExpect(status().isUnprocessableEntity());
         }
 
         @Test
@@ -83,7 +83,7 @@ public class UserControllerIntegrationTest {
             mvc.perform(post("/auth/register")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(mapper.writeValueAsString(reg)))
-                    .andExpect(status().isBadRequest());
+                    .andExpect(status().isUnprocessableEntity());
         }
 
         @Test
@@ -96,7 +96,7 @@ public class UserControllerIntegrationTest {
             mvc.perform(post("/auth/register")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(mapper.writeValueAsString(reg)))
-                    .andExpect(status().isBadRequest());
+                    .andExpect(status().isUnprocessableEntity());
         }
     }
 
@@ -122,7 +122,7 @@ public class UserControllerIntegrationTest {
             mvc.perform(post("/auth/login")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(mapper.writeValueAsString(dto)))
-                    .andExpect(status().isBadRequest());
+                    .andExpect(status().isUnprocessableEntity());
         }
 
         @Test
@@ -134,7 +134,7 @@ public class UserControllerIntegrationTest {
             mvc.perform(post("/auth/login")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(mapper.writeValueAsString(dto)))
-                    .andExpect(status().isBadRequest());
+                    .andExpect(status().isUnprocessableEntity());
         }
     }
 
