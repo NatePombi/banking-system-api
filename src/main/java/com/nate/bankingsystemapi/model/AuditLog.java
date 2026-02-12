@@ -2,6 +2,7 @@ package com.nate.bankingsystemapi.model;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDateTime;
 
@@ -22,5 +23,6 @@ public class AuditLog {
     private String performedBy;
     @Column(nullable = false, length = 1000)
     private String details;
-    private LocalDateTime createdAt = LocalDateTime.now();
+    @CreationTimestamp
+    private LocalDateTime createdAt;
 }

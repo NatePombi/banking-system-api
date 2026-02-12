@@ -18,7 +18,7 @@ public class JwtServiceTest {
 
         //Manually inject values normally provide by value
         ReflectionTestUtils.setField(jwtService,"secretKey",
-                "mytestsecretkeymytestsecretkeymytestsecretkey");
+                "c3VwZXItc2VjcmV0LWtleS1zdXBlci1zZWNyZXQta2V5LXN1cGVyLXNlY3JldC1rZXk=");
 
         ReflectionTestUtils.setField(jwtService,"expiration",3600000L);
 

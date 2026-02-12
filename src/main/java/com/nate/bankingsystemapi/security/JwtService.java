@@ -9,7 +9,9 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.security.Key;
+import java.util.Base64;
 import java.util.Date;
+import java.util.function.Function;
 
 @Service
 public class JwtService {
@@ -36,20 +38,18 @@ public class JwtService {
 
 
     public String extractUsername(String token){
-        Claims claims = Jwts.parserBuilder()
-                .setSigningKey(getSigningKey())
-                .build()
-                .parseClaimsJws(token)
-                .getBody();
+        return getClaims(token,Claims::getSubject);
+    }
 
-        return claims.getSubject();
+    public Date extractExpirationDate(String token){
+        return getClaims(token,Claims::getExpiration);
     }
 
     private boolean isTokenExpired(String token){
-        return extractClaims(token).getExpiration().before(new Date());
+        return extractExpirationDate(token).before(new Date());
     }
 
-    private Claims extractClaims(String token){
+    private Claims extractAllClaims(String token){
        return Jwts.parserBuilder()
                 .setSigningKey(getSigningKey())
                 .build()
@@ -57,8 +57,14 @@ public class JwtService {
                 .getBody();
     }
 
+    public <T> T getClaims(String token, Function<Claims, T> claimsResolver){
+        final Claims claims = extractAllClaims(token);
+        return claimsResolver.apply(claims);
+    }
+
     private Key getSigningKey(){
-        return Keys.hmacShaKeyFor(secretKey.getBytes());
+        byte[] bytes = Base64.getDecoder().decode(secretKey);
+        return Keys.hmacShaKeyFor(bytes);
     }
 
 }
