@@ -1,7 +1,9 @@
 # Banking System API
 
 ![Java CI](https://github.com/NatePombi/banking-system-api/actions/workflows/test.yml/badge.svg)
+![Java](https://img.shields.io/badge/Java-17-blue)
 [![codecov](https://codecov.io/gh/NatePombi/banking-system-api/branch/master/graph/badge.svg?token=YOUR_TOKEN)](https://codecov.io/gh/NatePombi/banking-system-api)
+
 
 
 A secure and modular banking backend built with Spring Boot, following professional fintech architecture principles.
