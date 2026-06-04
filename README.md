@@ -60,9 +60,7 @@ Supports account management, money transfers, ledger entries, and audit logging 
 
 ### Future Plans
 
-* Docker & Docker Compose (with Postgres)
-
-* Analytics dashboard (product stock levels, sales trends, etc.)
+* Integrate AWS
 * Adding End points for Ledger entry and Audit Logs
 
 --- 
