@@ -5,6 +5,7 @@ import com.nate.bankingsystemapi.dto.LoginDto;
 import com.nate.bankingsystemapi.dto.RegisterDto;
 import com.nate.bankingsystemapi.dto.UserDto;
 import com.nate.bankingsystemapi.exception.UserNotFoundException;
+import com.nate.bankingsystemapi.exception.UsernameExistsException;
 import com.nate.bankingsystemapi.mapper.UserMapper;
 import com.nate.bankingsystemapi.model.CustomerDetails;
 import com.nate.bankingsystemapi.model.User;
@@ -34,22 +35,34 @@ public class UserService implements IUserService, UserDetailsService {
      *
      * @param registerDto the {@link RegisterDto} object with user details for registration
      * @return a {@link UserDto} object
+     * @throws UsernameExistsException if duplicate username is found
      */
     @Override
     public UserDto registerUser(RegisterDto registerDto) {
-        log.info("Registers user: {}",registerDto.getUsername());
+        log.info("Registering user");
+
+        if(repo.existsByUsername(registerDto.getUsername())){
+            log.warn("Duplicate username found Registration failed");
+            throw new UsernameExistsException("User with Username already exists");
+        }
 
         //Creating User entity to store registered User
-        User user = new User(registerDto.getFullName(),registerDto.getUsername(),encoder.encode(registerDto.getPassword()));
+        User user =  User.createUser(registerDto.getFullName(),registerDto.getUsername(),encoder.encode(registerDto.getPassword()));
 
         //Saves registered user
-        log.debug("Saves the registered user entity into repo");
         User saved = repo.save(user);
+        log.info("Saves the registered user entity into repo");
 
         //Maps User entity to UserDto object using mapper
         return UserMapper.toDto(saved);
     }
 
+    /**
+     * Logging in User
+     *
+     * @param loginDto the {@link LoginDto} object with user details for login
+     * @return a {@link JwtResponse} object containing the JWT token
+     */
     @Override
     public JwtResponse loginUser(LoginDto loginDto) {
         log.info("Logging in user: {}",loginDto.getUsername());
@@ -57,14 +70,16 @@ public class UserService implements IUserService, UserDetailsService {
         //Fetching user by username
         CustomerDetails customerDetails = (CustomerDetails) loadUserByUsername(loginDto.getUsername());
 
+        //checking if encoded passwords match, if not throws an exception
         if(!encoder.matches(loginDto.getPassword(), customerDetails.getPassword())){
             log.error("Password or Username invalid");
             throw new RuntimeException("Password or Username invalid");
         }
 
-
+        // Generates Jwt token for user login
         String token = service.generateToken(customerDetails.getUser());
 
+        // returns object containing jwt token
         return new JwtResponse(token);
     }
 

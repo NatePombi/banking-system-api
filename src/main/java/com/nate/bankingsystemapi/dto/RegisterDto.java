@@ -2,6 +2,7 @@ package com.nate.bankingsystemapi.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -23,6 +24,6 @@ public class RegisterDto {
     @NotBlank(message = "Email cannot be empty")
     private String email;
     @Schema(description = "Password of User",example = "john123")
-    @NotBlank(message = "Password cannot be empty")
+    @Size(min = 7, message = "Password should be at least 7 characters")
     private String password;
 }

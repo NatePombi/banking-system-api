@@ -80,6 +80,12 @@ public class GlobalExceptionHandler {
         return new ApiError(Instant.now(),HttpStatus.BAD_REQUEST.value(), "Duplicate Request",ex.getMessage(),req.getRequestURI());
     }
 
+    @ExceptionHandler(UsernameExistsException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ApiError handlesDuplicateUsername(UsernameExistsException ex, jakarta.servlet.http.HttpServletRequest req){
+        return new ApiError(Instant.now(),HttpStatus.CONFLICT.value(),"Conflict", ex.getMessage(),req.getRequestURI());
+    }
+
     @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public ApiError handleException(Exception ex, jakarta.servlet.http.HttpServletRequest req){
