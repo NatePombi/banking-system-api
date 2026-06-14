@@ -9,7 +9,9 @@ import lombok.*;
 @Entity
 @Getter
 @NoArgsConstructor
-@Table(name = "users")
+@Table(name = "users", uniqueConstraints = {
+        @UniqueConstraint(columnNames = "username")
+})
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -24,21 +26,26 @@ public class User {
     @Enumerated(EnumType.STRING)
     private Role role;
 
-    public User(String fullName, String username, String password) {
-        this.fullName = fullName;
-        this.username = username;
-        this.password = password;
-        this.role = Role.USER;
+
+
+    public static User createUser(String fullName, String username, String password) {
+        User user = new User();
+        user.fullName = fullName;
+        user.username = username;
+        user.password = password;
+        user.role = Role.USER;
+
+        return user;
     }
 
-
-      User(Long id, String fullName, String username, String password) {
+    User(Long id, String fullName, String username, String password) {
         this.id = id;
         this.fullName = fullName;
         this.username = username;
         this.password = password;
         this.role = Role.USER;
     }
+
 
     public void changeRole(Role role) {
         this.role = role;

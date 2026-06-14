@@ -61,7 +61,7 @@ public class ConcurrentWithdrawalAndTransferTest {
         repo.deleteAll();
         repoU.deleteAll();
 
-        testUser = new User("Tester","testUser",passwordEncoder.encode("password"));
+        testUser = User.createUser("Tester","testUser",passwordEncoder.encode("password"));
         repoU.save(testUser);
 
         testAcc1 = new Account(testUser);

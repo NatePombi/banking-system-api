@@ -94,7 +94,7 @@ public class AccountServiceTest {
 
         @Test
         void testGetAccountById_SuccessEvenIfNotOwner_Admin(){
-            User admin = new User("Admin","admin","admin123");
+            User admin = User.createUser("Admin","admin","admin123");
             admin.changeRole(Role.ADMIN);
             when(repoU.existsByIdAndUsername(admin.getId(),admin.getUsername())).thenReturn(Boolean.TRUE);
             when(repoA.findById(2L)).thenReturn(Optional.of(testAccount));

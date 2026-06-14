@@ -54,7 +54,7 @@ public class TransactionsIntegrationTest {
     private String reqID;
     @BeforeEach
     void startUp(){
-        User testUser = new User("Tester","tester",encoder.encode("test123"));
+        User testUser = User.createUser("Tester","tester",encoder.encode("test123"));
         repoU.save(testUser);
 
         token = jwtService.generateToken(testUser);

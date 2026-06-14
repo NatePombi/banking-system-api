@@ -51,8 +51,8 @@ public class AccountControllerIntegrationTest {
     @BeforeEach
     void startUp(){
         repo.deleteAll();
-        User testUser = new User("Tester","tester",encoder.encode("test123"));
-        User adminUser = new User("Admin","admin",encoder.encode("test123"));
+        User testUser = User.createUser("Tester","tester",encoder.encode("test123"));
+        User adminUser = User.createUser("Admin","admin",encoder.encode("test123"));
         adminUser.changeRole(Role.ADMIN);
         repo.save(testUser);
         repo.save(adminUser);
