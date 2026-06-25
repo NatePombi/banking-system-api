@@ -3,6 +3,7 @@ package com.nate.bankingsystemapi.concurrentTests;
 import com.nate.bankingsystemapi.dto.FundsRequest;
 import com.nate.bankingsystemapi.dto.TransferRequest;
 import com.nate.bankingsystemapi.model.Account;
+import com.nate.bankingsystemapi.model.CurrencyCode;
 import com.nate.bankingsystemapi.model.User;
 import com.nate.bankingsystemapi.repository.AccountRepository;
 import com.nate.bankingsystemapi.repository.LedgerEntryRepository;
@@ -51,6 +52,8 @@ public class ConcurrentWithdrawalAndTransferTest {
     private TransactionFailureService failureService;
 
     private User testUser;
+    private User testUser2;
+
     private Account testAcc1;
     private Account testAcc2;
 
@@ -62,13 +65,16 @@ public class ConcurrentWithdrawalAndTransferTest {
         repoU.deleteAll();
 
         testUser = User.createUser("Tester","testUser",passwordEncoder.encode("password"));
-        repoU.save(testUser);
+        testUser2 = User.createUser("Tester2","testUser2",passwordEncoder.encode("password"));
 
-        testAcc1 = new Account(testUser);
+        repoU.save(testUser);
+        repoU.save(testUser2);
+
+        testAcc1 = Account.create(testUser, CurrencyCode.ZAR);
         testAcc1.changeBalance(1000L);
         repo.save(testAcc1);
 
-        testAcc2 = new Account(testUser);
+        testAcc2 = Account.create(testUser2,CurrencyCode.ZAR);
         testAcc2.changeBalance(500L);
         repo.save(testAcc2);
     }

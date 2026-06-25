@@ -3,6 +3,7 @@ package com.nate.bankingsystemapi.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nate.bankingsystemapi.dto.PostAccountDto;
 import com.nate.bankingsystemapi.model.Account;
+import com.nate.bankingsystemapi.model.CurrencyCode;
 import com.nate.bankingsystemapi.model.Role;
 import com.nate.bankingsystemapi.model.User;
 import com.nate.bankingsystemapi.repository.AccountRepository;
@@ -60,7 +61,7 @@ public class AccountControllerIntegrationTest {
         tokenTestUser = jwtService.generateToken(testUser);
         tokenAdminUser = jwtService.generateToken(testUser);
 
-        testAccount = new Account(testUser);
+        testAccount = Account.create(testUser, CurrencyCode.ZAR);
         repoA.save(testAccount);
 
     }
@@ -70,15 +71,15 @@ public class AccountControllerIntegrationTest {
     class CreateAccount {
         @Test
         void testCreateAccount_Success() throws Exception {
-            PostAccountDto dto = new PostAccountDto(1000L);
+            PostAccountDto dto = new PostAccountDto(CurrencyCode.EUR.toString());
 
             mvc.perform(post("/account")
                             .header("Authorization", "Bearer " + tokenTestUser)
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(mapper.writeValueAsString(dto)))
                     .andExpect(status().isCreated())
-                    .andExpect(jsonPath("$.balance").value(1000))
-                    .andExpect(jsonPath("$.currency").value("ZAR"));
+                    .andExpect(jsonPath("$.balance").value(0))
+                    .andExpect(jsonPath("$.currency").value("EUR"));
 
 
         }
@@ -96,17 +97,7 @@ public class AccountControllerIntegrationTest {
 
         }
 
-        @Test
-        void testCreateAccount_FailBadRequestBalanceNegative() throws Exception {
-            PostAccountDto dto = new PostAccountDto(-7000L);
 
-            mvc.perform(post("/account")
-                            .header("Authorization", "Bearer " + tokenTestUser)
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(mapper.writeValueAsString(dto)))
-                    .andExpect(status().isUnprocessableEntity());
-
-        }
 
     }
 

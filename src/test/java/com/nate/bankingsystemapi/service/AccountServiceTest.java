@@ -44,9 +44,9 @@ public class AccountServiceTest {
     @BeforeEach
     void startUp(){
         testUser = new TestUser(1L,"Tester","test","hash-pass");
-        testAccount = new TestAccount(2L,testUser);
+        testAccount = new TestAccount(2L,testUser,CurrencyCode.ZAR);
         testAccount.changeBalance(40000L);
-        testPost = new PostAccountDto(40000L);
+        testPost = new PostAccountDto(CurrencyCode.ZAR.toString());
 
     }
 
@@ -61,7 +61,7 @@ public class AccountServiceTest {
 
             AccountDto dto = service.createAccount(testPost, testUser);
 
-            assertEquals(testPost.getBalance(), dto.getBalance(), "balance should the same");
+            assertEquals(testPost.getCurrency(), dto.getCurrency(), "Currency code should be the same");
 
         }
 
@@ -71,7 +71,7 @@ public class AccountServiceTest {
                 service.createAccount(testPost,testUser);
             });
 
-            assertTrue(ex.getMessage().contains(testUser.getUsername()));
+            assertTrue(ex.getMessage().contains(testUser.getId().toString()));
         }
 
     }
@@ -113,7 +113,7 @@ public class AccountServiceTest {
                 service.getAccountById(testAccount.getId(),testUser);
             });
 
-            assertTrue(ex.getMessage().contains(testUser.getUsername()));
+            assertTrue(ex.getMessage().contains(testUser.getId().toString()));
         }
 
         @Test
@@ -224,8 +224,8 @@ public class AccountServiceTest {
         void  testGetAllUserAccounts_SuccessAdminFetchesAll(){
             User admin = new TestUser(13L,"Admin","admin","admin123");
             admin.changeRole(Role.ADMIN);
-            Account acc1 = new Account(testUser);
-            Account acc2 = new Account(testUser);
+            Account acc1 = Account.create(testUser,CurrencyCode.ZAR);
+            Account acc2 = Account.create(testUser,CurrencyCode.ZAR);
             Pageable pageable = PageRequest.of(0,5, Sort.by("id").descending());
             Page<Account> page = new PageImpl<>(List.of(testAccount,acc1,acc2));
 
@@ -246,7 +246,7 @@ public class AccountServiceTest {
                 service.getAllUserAccount(testUser,0,5,"id","desc");
             });
 
-            assertTrue(ex.getMessage().contains(testUser.getUsername()));
+            assertTrue(ex.getMessage().contains(testUser.getId().toString()));
         }
 
         @Test

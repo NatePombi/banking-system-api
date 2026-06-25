@@ -86,6 +86,12 @@ public class GlobalExceptionHandler {
         return new ApiError(Instant.now(),HttpStatus.CONFLICT.value(),"Conflict", ex.getMessage(),req.getRequestURI());
     }
 
+    @ExceptionHandler(CurrencyCodeMismatchException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ApiError handlesInvalidCurrencyCode(CurrencyCodeMismatchException ex, jakarta.servlet.http.HttpServletRequest req){
+        return new ApiError(Instant.now(),HttpStatus.CONFLICT.value(), "Conflict", ex.getMessage(),req.getRequestURI());
+    }
+
     @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public ApiError handleException(Exception ex, jakarta.servlet.http.HttpServletRequest req){

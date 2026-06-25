@@ -7,7 +7,7 @@ import lombok.NoArgsConstructor;
 @Getter
 public class TestAccount extends Account {
 
-    public TestAccount(Long id,User user) {
-        super(id,user);
+    public TestAccount(Long id,User user,CurrencyCode code) {
+        super(id,user,code);
     }
 }

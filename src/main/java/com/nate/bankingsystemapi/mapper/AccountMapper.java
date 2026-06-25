@@ -15,7 +15,7 @@ public class AccountMapper {
                 acc.getId(),
                 acc.getAccountNum(),
                 acc.getBalance(),
-                acc.getCurrency(),
+                acc.getCurrency().toString(),
                 acc.getUser().getId()
         );
     }
