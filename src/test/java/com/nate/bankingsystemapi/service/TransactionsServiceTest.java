@@ -49,9 +49,9 @@ public class TransactionsServiceTest {
     @BeforeEach
     void startUp(){
         testUser = new TestUser(11L,"Tester","test","hash-pass");
-        testAccount = new TestAccount(1L,testUser);
+        testAccount = new TestAccount(1L,testUser,CurrencyCode.ZAR);
         testAccount.changeBalance(10000L);
-        testAccount2 = new TestAccount(2L,testUser);
+        testAccount2 = new TestAccount(2L,testUser,CurrencyCode.ZAR);
 
         reqID = UUID.randomUUID().toString();
 

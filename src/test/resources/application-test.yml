@@ -1,5 +1,8 @@
 debug: false
 
+JWT_SECRET: VGhpc0lzQVN1cGVyU2VjcmV0S2V5Rm9ySldUU2lnbmluZw==
+JWT_EXPIRE: 36000000
+
 spring:
   datasource:
     url: jdbc:postgresql://localhost:5432/bankingapitest

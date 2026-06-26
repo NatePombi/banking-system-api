@@ -3,6 +3,7 @@ package com.nate.bankingsystemapi.model;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.Instant;
 import java.time.LocalDate;
@@ -35,7 +36,7 @@ public class Transactions {
     private String username;
     @Enumerated(EnumType.STRING)
     private Status status;
-    @Column(nullable = false, updatable = false)
+    @CreationTimestamp
     private Instant instant;
 
     public Transactions(Long amount,String username,String requestID){
@@ -43,7 +44,6 @@ public class Transactions {
         this.username = username;
         this.requestID = requestID;
         this.status = Status.PENDING;
-        this.instant = Instant.now();
     }
 
     public void changeAction(Action action){

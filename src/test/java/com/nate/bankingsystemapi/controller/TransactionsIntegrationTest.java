@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nate.bankingsystemapi.dto.FundsRequest;
 import com.nate.bankingsystemapi.dto.TransferRequest;
 import com.nate.bankingsystemapi.model.Account;
+import com.nate.bankingsystemapi.model.CurrencyCode;
 import com.nate.bankingsystemapi.model.User;
 import com.nate.bankingsystemapi.repository.AccountRepository;
 import com.nate.bankingsystemapi.repository.UserRepository;
@@ -55,13 +56,16 @@ public class TransactionsIntegrationTest {
     @BeforeEach
     void startUp(){
         User testUser = User.createUser("Tester","tester",encoder.encode("test123"));
+        User testUser2 = User.createUser("Tester2","tester2",encoder.encode("test123"));
+
         repoU.save(testUser);
+        repoU.save(testUser2);
 
         token = jwtService.generateToken(testUser);
 
-         testAccount1 = new Account(testUser);
+         testAccount1 = Account.create(testUser, CurrencyCode.ZAR);
          testAccount1.changeBalance(10000L);
-         testAccount2 = new Account(testUser);
+         testAccount2 = Account.create(testUser2,CurrencyCode.ZAR);
 
         repoA.save(testAccount1);
         repoA.save(testAccount2);
