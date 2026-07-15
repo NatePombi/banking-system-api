@@ -1,10 +1,10 @@
 package com.nate.bankingsystemapi.exception;
 
-import com.nate.bankingsystemapi.model.User;
+import com.nate.bankingsystemapi.model.user.entity.User;
 
 public class UserNotFoundException extends RuntimeException {
-    public UserNotFoundException(Long id) {
-        super("User with id " + id + " not found.");
+    public UserNotFoundException(String username) {
+        super("User " + username + " not found.");
     }
     public UserNotFoundException(User user) {
         super("User " + user.getUsername() + " not found.");

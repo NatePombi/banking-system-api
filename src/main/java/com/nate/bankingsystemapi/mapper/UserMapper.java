@@ -1,7 +1,7 @@
 package com.nate.bankingsystemapi.mapper;
 
-import com.nate.bankingsystemapi.dto.UserDto;
-import com.nate.bankingsystemapi.model.User;
+import com.nate.bankingsystemapi.dto.user.UserDto;
+import com.nate.bankingsystemapi.model.user.entity.User;
 
 public class UserMapper {
 
@@ -14,8 +14,8 @@ public class UserMapper {
                 user.getId(),
                 user.getFullName(),
                 user.getUsername(),
-                user.getPassword(),
-                user.getRole()
+                user.getRole(),
+                user.getStatus()
         );
     }
 }
