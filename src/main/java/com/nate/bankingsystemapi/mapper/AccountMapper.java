@@ -1,8 +1,7 @@
 package com.nate.bankingsystemapi.mapper;
 
-import com.nate.bankingsystemapi.dto.AccountDto;
-import com.nate.bankingsystemapi.model.Account;
-import com.nate.bankingsystemapi.model.User;
+import com.nate.bankingsystemapi.dto.account.AccountDto;
+import com.nate.bankingsystemapi.model.account.entity.Account;
 
 public class AccountMapper {
 

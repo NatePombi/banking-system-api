@@ -1,11 +1,14 @@
 package com.nate.bankingsystemapi.mapper;
 
-import com.nate.bankingsystemapi.dto.TransactionDto;
-import com.nate.bankingsystemapi.model.Transactions;
+import com.nate.bankingsystemapi.dto.transaction.TransactionDto;
+import com.nate.bankingsystemapi.model.account.entity.Account;
+import com.nate.bankingsystemapi.model.transaction.entity.Transactions;
+
+import java.math.BigDecimal;
 
 public class TransactionMapper {
 
-    public static TransactionDto toDto(Transactions transactions){
+    public static TransactionDto toDto(Transactions transactions, Account fromAccount, Account toAccount, BigDecimal amount){
 
         if(transactions == null){
             return null;
@@ -13,9 +16,9 @@ public class TransactionMapper {
 
         return new TransactionDto(
                 transactions.getId(),
-                transactions.getAmount(),
-                transactions.getFromAccount().getAccountNum(),
-                transactions.getToAccount().getAccountNum(),
+                amount,
+                fromAccount.getAccountNum(),
+                toAccount.getAccountNum(),
                 transactions.getStatus()
         );
     }

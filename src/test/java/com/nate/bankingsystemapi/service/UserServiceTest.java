@@ -1,27 +1,33 @@
 package com.nate.bankingsystemapi.service;
 
-import com.nate.bankingsystemapi.dto.JwtResponse;
-import com.nate.bankingsystemapi.dto.LoginDto;
-import com.nate.bankingsystemapi.dto.RegisterDto;
-import com.nate.bankingsystemapi.dto.UserDto;
+import com.nate.bankingsystemapi.dto.user.JwtResponse;
+import com.nate.bankingsystemapi.dto.user.LoginDto;
+import com.nate.bankingsystemapi.dto.user.RegisterDto;
+import com.nate.bankingsystemapi.dto.user.UserDto;
+import com.nate.bankingsystemapi.exception.InvalidCredentialException;
 import com.nate.bankingsystemapi.exception.UsernameExistsException;
-import com.nate.bankingsystemapi.model.User;
+import com.nate.bankingsystemapi.model.user.entity.User;
+import com.nate.bankingsystemapi.model.user.enums.Role;
+import com.nate.bankingsystemapi.model.user.enums.UserStatus;
 import com.nate.bankingsystemapi.repository.UserRepository;
 import com.nate.bankingsystemapi.security.JwtService;
+import com.nate.bankingsystemapi.service.user.UserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.data.domain.*;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 public class UserServiceTest {
@@ -54,6 +60,9 @@ public class UserServiceTest {
 
         assertEquals("Tester",user.getFullName(),"full name should be the same");
         assertEquals("test",user.getUsername(),"username should be the same");
+
+        verify(repo).save(any(User.class));
+        verify(repo).existsByUsername(reg.getUsername());
     }
 
     @Test
@@ -64,23 +73,86 @@ public class UserServiceTest {
         assertThrows(UsernameExistsException.class, ()->{
             service.registerUser(registerDto);
         });
+
+        verify(repo,never()).save(any(User.class));
     }
 
     @Test
     void testLoginUser_Success(){
         LoginDto login = new LoginDto("test","test123");
-
         when(repo.findByUsername("test")).thenReturn(Optional.of(testUser));
         when(jwtService.generateToken(testUser)).thenReturn("Valid-Token");
-        UserDetails detail = service.loadUserByUsername(login.getUsername());
 
-        when(encoder.matches(login.getPassword(),detail.getPassword())).thenReturn(true);
+        when(encoder.matches("test123",testUser.getPassword())).thenReturn(true);
 
         JwtResponse response = service.loginUser(login);
 
-        assertEquals(JwtResponse.class, response.getClass());
+        assertEquals("Valid-Token", response.getToken());
+        verify(repo).findByUsername("test");
+        verify(encoder).matches("test123",testUser.getPassword());
+        verify(jwtService).generateToken(testUser);
+    }
+
+    @Test
+    void shouldFailLogin_InvalidCredentials_Username(){
+        LoginDto login = new LoginDto("test","test123");
+
+
+        assertThrows(InvalidCredentialException.class,()->{
+            service.loginUser(login);
+        });
+    }
+
+    @Test
+    void shouldFailLogin_InvalidCredentials_Password(){
+        LoginDto login = new LoginDto("test","test123");
+        when(repo.findByUsername(login.getUsername())).thenReturn(Optional.of(testUser));
+
+        assertThrows(InvalidCredentialException.class,()->{
+            service.loginUser(login);
+        });
     }
 
 
+    @Test
+    void shouldGetAllUserForAdmin(){
+        User user1 = mock(User.class);
+        User user2 = mock(User.class);
+
+        Pageable pageable = PageRequest.of(0,5, Sort.by("id").descending());
+        Page<User> page = new PageImpl<>(List.of(user1,user2));
+
+        when(repo.existsByUsernameAndRole("test", Role.ADMIN)).thenReturn(true);
+        when(repo.findAll(pageable)).thenReturn(page);
+
+        Page<UserDto> responses = service.adminGetAllUser("test",0,5,"id","desc");
+
+        assertNotNull(responses);
+        assertEquals(2,responses.getContent().size());
+
+    }
+
+    @Test
+    void shouldFailGetAllUserForAdmin_AdminNotFound(){
+
+        assertThrows(AccessDeniedException.class,()->{
+            service.adminGetAllUser("test",0,5,"id","desc");
+        });
+    }
+
+    @Test
+    void shouldGetUserByIdForAdmin(){
+
+        when(repo.existsByUsernameAndRole("admin",Role.ADMIN)).thenReturn(true);
+        when(repo.findById(1L)).thenReturn(Optional.of(testUser));
+
+        UserDto dto = service.adminGetUserById(1L,"admin");
+        assertNotNull(dto);
+
+        assertEquals("Tester",dto.getFullName());
+        assertEquals("test",dto.getUsername());
+        assertEquals(Role.USER,dto.getRole());
+        assertEquals(UserStatus.ACTIVE,dto.getStatus());
+    }
 
 }

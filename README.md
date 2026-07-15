@@ -52,6 +52,8 @@ Supports account management, money transfers, ledger entries, and audit logging 
 * ![H2 Database](https://img.shields.io/badge/H2-Database-blue?logo=h2&logoColor=white)
 
 * ![Maven](https://img.shields.io/badge/Build-Maven-orange?logo=apachemaven)
+* ![Docker](https://img.shields.io/badge/Docker-Containerization-2496ED?logo=docker&logoColor=white)
+
 
 
 
@@ -157,22 +159,27 @@ This section explains how to interact with the Banking System API, including ava
 
 ### Endpoints Overview
 
-| Method | Endpoints                    | Description                                                        |
-|--------|------------------------------|--------------------------------------------------------------------|
-| Post   | /auth/register               | Register new User                                                  |
-| Post   | /auth/login                  | Logs in User                                                       |
-|Post    | /account                     | Creates new account                                                |
- |Get    | /account/{id}                | Gets account by id                                                 |
-|Get    | /account/accountNum/{accNum} | Gets account by account number                                     |
- | Get   | /account                     | Retrieves a paginated list of accounts (for the Authenticated user |
-  | Post | /transactions/transfer       | Transfers funds between accounts                                   |
- | Post  | /transactions/deposit        | Deposits funds in account                                          |
- | Post  | /transactions/withdraw       | Withdraw funds from account                                        
+| Method | Endpoints                            | Description                                                        |
+|--------|--------------------------------------|--------------------------------------------------------------------|
+| Post   | /api/v1/auth/register                | Register new User                                                  |
+| Post   | /api/v1/auth/login                   | Logs in User                                                       |
+| Get    | /api/v1/admin/fetch                  | Gets all registered Users for admin                                |
+| Get    | /api/v1/admin/fetch/{id}             | Gets a user by id for admin                                        |
+| Post   | /api/v1/accounts                     | Creates new account                                                |
+ | Get    | /api/v1/accounts/{id}                | Gets account by id                                                 |
+| Get    | /api/v1/accounts/accountNum/{accNum} | Gets account by account number                                     |
+ | Get    | /api/v1/accounts                     | Retrieves a paginated list of accounts (for the Authenticated user |
+| Get    | /api/v1/admin/accounts/fetch         | Retrieves a paginated list of all accounts (for admin)             |
+| Get    | /api/v1/admin/accounts/fetch/{id}    | Gets account by id for admin                                       |
+| Get    | /api/v1/admin/accounts/fetch/{acc}   | Gets account by account number for admin                             |
+  | Post   | /api/v1/transactions/transfer        | Transfers funds between accounts                                   |
+ | Post   | /api/v1/transactions/deposit         | Deposits funds in account                                          |
+ | Post   | /api/v1/transactions/withdraw        | Withdraw funds from account                                        
 
 ### Sample API calls
 
 Register User
-**POST** `/auth/register`
+**POST** `/api/v1/auth/register`
 ```json
 {
   "fullName": "John Doe",
@@ -183,7 +190,7 @@ Register User
 ```
 
 Login User
-**POST** `/auth/login`
+**POST** `/api/v1/auth/login`
 ```json
 {
   "username": "john123",
@@ -193,10 +200,10 @@ Login User
 ```
 
 Create Account
-**POST** `/account`
+**POST** `/api/v1/accounts`
 ```json
 {
-  "balance": 0
+  "currency": "ZAR"
 }
 ```
 
@@ -212,7 +219,7 @@ Response:
 ```
 
 Transfer Funds
-**POST** `/transactions/transfer`
+**POST** `/api/v1/transactions/transfer`
 ```json
 {
   "fromAccount": 8986793488,

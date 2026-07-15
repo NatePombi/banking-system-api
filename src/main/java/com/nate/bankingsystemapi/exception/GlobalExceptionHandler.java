@@ -29,6 +29,12 @@ public class GlobalExceptionHandler {
         return new ApiError(Instant.now(),HttpStatus.NOT_FOUND.value(), "User Not Found",ex.getMessage(),req.getRequestURI());
     }
 
+    @ExceptionHandler(AdminNotFoundException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public ApiError handlesAdminNotFound(AdminNotFoundException ex, jakarta.servlet.http.HttpServletRequest req){
+        return new ApiError(Instant.now(),HttpStatus.NOT_FOUND.value(), "Admin Not Found",ex.getMessage(),req.getRequestURI());
+    }
+
 
     @ExceptionHandler(AccessDeniedException.class)
     @ResponseStatus(HttpStatus.FORBIDDEN)
@@ -36,14 +42,21 @@ public class GlobalExceptionHandler {
         return new ApiError(Instant.now(),HttpStatus.FORBIDDEN.value(), "Forbidden",ex.getMessage(),req.getRequestURI());
     }
 
+
+    @ExceptionHandler(InvalidCredentialException.class)
+    @ResponseStatus(HttpStatus.FORBIDDEN)
+    public ApiError handlesInvalidCredentialException(InvalidCredentialException e, jakarta.servlet.http.HttpServletRequest request) {
+        return new ApiError(Instant.now(),HttpStatus.FORBIDDEN.value(), "Forbidden", e.getMessage(),request.getRequestURI());
+    }
+
     @ExceptionHandler(JwtException.class)
     @ResponseStatus(HttpStatus.UNAUTHORIZED)
     public ApiError handlesJwtException(JwtException ex, jakarta.servlet.http.HttpServletRequest req){
-        return new ApiError(Instant.now(),HttpStatus.UNPROCESSABLE_ENTITY.value(), "Unauthorized",ex.getMessage(),req.getRequestURI());
+        return new ApiError(Instant.now(),HttpStatus.UNAUTHORIZED.value(), "Unauthorized",ex.getMessage(),req.getRequestURI());
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    @ResponseStatus(HttpStatus.UNPROCESSABLE_ENTITY)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ApiError handleValidation(MethodArgumentNotValidException ex, jakarta.servlet.http.HttpServletRequest req){
         String msg = ex.getBindingResult().getAllErrors().stream()
                 .map(e-> {
@@ -59,7 +72,7 @@ public class GlobalExceptionHandler {
         }
 
 
-        return new ApiError(Instant.now(),HttpStatus.UNPROCESSABLE_ENTITY.value(), "unprocessable Entity",msg, req.getRequestURI());
+        return new ApiError(Instant.now(),HttpStatus.BAD_REQUEST.value(), "unprocessable Entity",msg, req.getRequestURI());
     }
 
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
@@ -75,9 +88,9 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(DuplicateRequestException.class)
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ResponseStatus(HttpStatus.CONFLICT)
     public ApiError handleDuplicate(DuplicateRequestException ex, jakarta.servlet.http.HttpServletRequest req){
-        return new ApiError(Instant.now(),HttpStatus.BAD_REQUEST.value(), "Duplicate Request",ex.getMessage(),req.getRequestURI());
+        return new ApiError(Instant.now(),HttpStatus.CONFLICT.value(), "Duplicate Request",ex.getMessage(),req.getRequestURI());
     }
 
     @ExceptionHandler(UsernameExistsException.class)

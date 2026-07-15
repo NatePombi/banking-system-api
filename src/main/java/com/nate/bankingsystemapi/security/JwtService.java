@@ -1,11 +1,12 @@
 package com.nate.bankingsystemapi.security;
 
-import com.nate.bankingsystemapi.model.User;
+import com.nate.bankingsystemapi.model.user.entity.User;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
 import java.security.Key;
@@ -31,9 +32,9 @@ public class JwtService {
                 .compact();
     }
 
-    public boolean isTokenValid(String token, User user){
+    public boolean isTokenValid(String token, UserDetails userDetails){
         String username = extractUsername(token);
-        return user.getUsername().equals(username) && !isTokenExpired(token);
+        return userDetails.getUsername().equals(username) && !isTokenExpired(token);
     }
 
 

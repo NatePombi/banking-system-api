@@ -1,6 +1,7 @@
 package com.nate.bankingsystemapi.repository;
 
-import com.nate.bankingsystemapi.model.User;
+import com.nate.bankingsystemapi.model.user.entity.User;
+import com.nate.bankingsystemapi.model.user.enums.Role;
 import jakarta.validation.constraints.NotBlank;
 import org.springframework.data.jpa.repository.JpaRepository;
 
@@ -12,4 +13,6 @@ public interface UserRepository extends JpaRepository<User, Long> {
     boolean existsByIdAndUsername(Long id, String username);
 
     boolean existsByUsername(@NotBlank(message = "Username cannot be empty") String username);
+
+    boolean existsByUsernameAndRole(String username, Role role);
 }
