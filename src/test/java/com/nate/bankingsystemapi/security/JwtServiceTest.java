@@ -1,7 +1,7 @@
 package com.nate.bankingsystemapi.security;
 
-import com.nate.bankingsystemapi.model.TestUser;
-import com.nate.bankingsystemapi.model.User;
+import com.nate.bankingsystemapi.model.user.entity.TestUser;
+import com.nate.bankingsystemapi.model.user.entity.User;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;

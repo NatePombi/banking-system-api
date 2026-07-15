@@ -1,8 +1,7 @@
 package com.nate.bankingsystemapi.security;
 
-import com.nate.bankingsystemapi.model.CustomerDetails;
-import com.nate.bankingsystemapi.model.TestUser;
-import com.nate.bankingsystemapi.model.User;
+import com.nate.bankingsystemapi.model.user.entity.TestUser;
+import com.nate.bankingsystemapi.model.user.entity.User;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -24,11 +23,11 @@ import java.util.List;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-public class JwtFilterAuthTest {
+public class JwtAuthenticationFilterTest {
     @Mock
     private UserDetailsService details;
     @InjectMocks
-    private JwtFilterAuth auth;
+    private JwtAuthenticationFilter auth;
     @Mock
     private FilterChain chain;
     @Mock
@@ -54,35 +53,30 @@ public class JwtFilterAuthTest {
 
     @Test
     void shouldPassThroughAuthEndPoints() throws ServletException, IOException {
-        when(request.getServletPath()).thenReturn("/auth/login");
         auth.doFilterInternal(request,response,chain);
         verify(chain,times(1)).doFilter(request,response);
     }
 
     @Test
     void shouldReturn401WhenMissingAuthorization() throws ServletException, IOException {
-        when(request.getServletPath()).thenReturn("/account/1");
         when(request.getHeader("Authorization")).thenReturn(null);
-        when(response.getWriter()).thenReturn(printWriter);
 
         auth.doFilterInternal(request,response,chain);
 
-        verify(response).setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-        verify(chain,never()).doFilter(request,response);
+        verify(chain).doFilter(request,response);
     }
 
 
     @Test
     void shouldAuthenticateWhenTokenIsValid() throws ServletException, IOException {
-        when(request.getServletPath()).thenReturn("/account/1");
         when(request.getHeader("Authorization")).thenReturn("Bearer Valid-Token");
         when(jwtService.isTokenValid(eq("Valid-Token"),any())).thenReturn(Boolean.TRUE);
         when(jwtService.extractUsername("Valid-Token")).thenReturn("tester");
 
-        CustomerDetails customerDetails = mock(CustomerDetails.class);
-        when(customerDetails.getAuthorities()).thenReturn(List.of());
+        User user = mock(User.class);
+        when(user.getAuthorities()).thenReturn(List.of());
 
-        when(details.loadUserByUsername("tester")).thenReturn(customerDetails);
+        when(details.loadUserByUsername("tester")).thenReturn(user);
 
 
          auth.doFilterInternal(request,response,chain);

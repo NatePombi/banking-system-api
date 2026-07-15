@@ -1,24 +1,31 @@
 package com.nate.bankingsystemapi.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.nate.bankingsystemapi.dto.PostAccountDto;
-import com.nate.bankingsystemapi.model.Account;
-import com.nate.bankingsystemapi.model.CurrencyCode;
-import com.nate.bankingsystemapi.model.Role;
-import com.nate.bankingsystemapi.model.User;
+import com.nate.bankingsystemapi.dto.account.AccountDto;
+import com.nate.bankingsystemapi.dto.account.PostAccountDto;
+import com.nate.bankingsystemapi.model.account.entity.Account;
+import com.nate.bankingsystemapi.model.account.enums.CurrencyCode;
+import com.nate.bankingsystemapi.model.user.enums.Role;
+import com.nate.bankingsystemapi.model.user.entity.User;
 import com.nate.bankingsystemapi.repository.AccountRepository;
 import com.nate.bankingsystemapi.repository.UserRepository;
 import com.nate.bankingsystemapi.security.JwtService;
+import com.nate.bankingsystemapi.service.account.IAccountService;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.domain.Page;
 import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.math.BigDecimal;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -43,6 +50,8 @@ public class AccountControllerIntegrationTest {
     private PasswordEncoder encoder;
     @Autowired
     private JwtService jwtService;
+    @Autowired
+    private IAccountService accountService;
 
     private String tokenTestUser;
     private String tokenAdminUser;
@@ -59,10 +68,10 @@ public class AccountControllerIntegrationTest {
         repo.save(adminUser);
 
         tokenTestUser = jwtService.generateToken(testUser);
-        tokenAdminUser = jwtService.generateToken(testUser);
+        tokenAdminUser = jwtService.generateToken(adminUser);
 
-        testAccount = Account.create(testUser, CurrencyCode.ZAR);
-        repoA.save(testAccount);
+        Account acc = Account.create(testUser, CurrencyCode.ZAR);
+        testAccount = repoA.save(acc);
 
     }
 
@@ -73,13 +82,13 @@ public class AccountControllerIntegrationTest {
         void testCreateAccount_Success() throws Exception {
             PostAccountDto dto = new PostAccountDto(CurrencyCode.EUR.toString());
 
-            mvc.perform(post("/account")
+            mvc.perform(post("/api/v1/accounts")
                             .header("Authorization", "Bearer " + tokenTestUser)
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(mapper.writeValueAsString(dto)))
                     .andExpect(status().isCreated())
                     .andExpect(jsonPath("$.balance").value(0))
-                    .andExpect(jsonPath("$.currency").value("EUR"));
+                    .andExpect(jsonPath("$.currency").value(CurrencyCode.EUR.toString()));
 
 
         }
@@ -89,11 +98,11 @@ public class AccountControllerIntegrationTest {
         void testCreateAccount_FailBadRequestNoBalance() throws Exception {
             PostAccountDto dto = new PostAccountDto(null);
 
-            mvc.perform(post("/account")
+            mvc.perform(post("/api/v1/accounts")
                             .header("Authorization", "Bearer " + tokenTestUser)
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(mapper.writeValueAsString(dto)))
-                    .andExpect(status().isUnprocessableEntity());
+                    .andExpect(status().isBadRequest());
 
         }
 
@@ -106,32 +115,27 @@ public class AccountControllerIntegrationTest {
     class GetById{
         @Test
         void testGetById_Success() throws Exception {
-            mvc.perform(get("/account/1")
+            Long id = testAccount.getId();
+            mvc.perform(get("/api/v1/accounts/fetch/" + id)
                             .header("Authorization", "Bearer " + tokenTestUser))
                     .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.balance").value(0))
-                    .andExpect(jsonPath("$.currency").value("ZAR"));
-        }
-
-        @Test
-        void testGetById_SuccessAdmin() throws Exception {
-            mvc.perform(get("/account/1")
-                            .header("Authorization", "Bearer " + tokenAdminUser))
-                    .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.balance").value(0))
-                    .andExpect(jsonPath("$.currency").value("ZAR"));
+                    .andExpect(jsonPath("$.balance").value(new BigDecimal("0.0")))
+                    .andExpect(jsonPath("$.currency").value(testAccount.getCurrency().toString()))
+                    .andExpect(jsonPath("$.accountNum").value(testAccount.getAccountNum()))
+                    .andExpect(jsonPath("$.userId").value(testAccount.getUser().getId()));
         }
 
         @Test
         void testGetById_FailNotFound() throws Exception {
-            mvc.perform(get("/account/11")
+            mvc.perform(get("/api/v1/accounts/fetch/11")
                             .header("Authorization", "Bearer " + tokenTestUser))
                     .andExpect(status().isNotFound());
         }
 
         @Test
         void testGetById_FailUnAuthorized() throws Exception {
-            mvc.perform(get("/account/1"))
+            Long id = testAccount.getId();
+            mvc.perform(get("/api/v1/accounts/fetch/"+id))
                     .andExpect(status().isUnauthorized());
         }
 
@@ -142,27 +146,21 @@ public class AccountControllerIntegrationTest {
     class GetByAccountNum{
         @Test
         void testGetByAccountNum_Success() throws Exception {
-            String accountNum = testAccount.getAccountNum().toString();
-            mvc.perform(get("/account/accountNum/"+accountNum)
+            Long accountNum = testAccount.getAccountNum();
+            mvc.perform(get("/api/v1/accounts/accountNum/"+accountNum)
                             .header("Authorization", "Bearer " + tokenTestUser))
                     .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.balance").value(0))
-                    .andExpect(jsonPath("$.currency").value("ZAR"));
+                    .andExpect(jsonPath("$.balance").value(new BigDecimal("0.0")))
+                    .andExpect(jsonPath("$.currency").value(testAccount.getCurrency().toString()))
+                    .andExpect(jsonPath("$.id").value(testAccount.getId()))
+                    .andExpect(jsonPath("$.userId").value(testAccount.getUser().getId()));
         }
 
-        @Test
-        void testGetByAccountNum_SuccessAdmin() throws Exception {
-            String accountNum = testAccount.getAccountNum().toString();
-            mvc.perform(get("/account/accountNum/"+accountNum)
-                            .header("Authorization", "Bearer " + tokenAdminUser))
-                    .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.balance").value(0))
-                    .andExpect(jsonPath("$.currency").value("ZAR"));
-        }
+
 
         @Test
         void testGetByAccountNum_FailNotFound() throws Exception {
-            mvc.perform(get("/account/accountNum/00569875")
+            mvc.perform(get("/api/v1/accounts/accountNum/00569875")
                             .header("Authorization", "Bearer " + tokenTestUser))
                     .andExpect(status().isNotFound());
         }
@@ -170,7 +168,7 @@ public class AccountControllerIntegrationTest {
         @Test
         void testGetByAccountNum_FailUnAuthorized() throws Exception {
             String accountNum = testAccount.getAccountNum().toString();
-            mvc.perform(get("/account/accountNum/"+ accountNum))
+            mvc.perform(get("/api/v1/accounts/accountNum/"+ accountNum))
                     .andExpect(status().isUnauthorized());
         }
 
@@ -181,7 +179,7 @@ public class AccountControllerIntegrationTest {
     class GetAllUserAccounts{
         @Test
         void testGetAllUserAccounts_Success() throws Exception {
-            mvc.perform(get("/account")
+            mvc.perform(get("/api/v1/accounts")
                             .param("page","0")
                             .param("size","5")
                             .param("sortBy","id")
@@ -192,12 +190,118 @@ public class AccountControllerIntegrationTest {
 
         @Test
         void testGetAllUserAccounts_FailUnauthorized() throws Exception {
-            mvc.perform(get("/account")
+            mvc.perform(get("/api/v1/accounts")
                             .param("page","0")
                             .param("size","5")
                             .param("sortBy","id")
                             .param("direction","desc"))
                     .andExpect(status().isUnauthorized());
         }
+    }
+
+    @Nested
+    class Admin {
+        @Test
+        void shouldGetAllAccountsForAdmin() throws Exception {
+            mvc.perform(get("/api/v1/admin/accounts/fetch")
+                            .param("page","0")
+                            .param("size","5")
+                            .param("sortBy","id")
+                            .param("direction","desc")
+                            .header("Authorization", "Bearer "+tokenAdminUser))
+                    .andExpect(status().isOk());
+
+            String username = jwtService.extractUsername(tokenAdminUser);
+
+            Page<AccountDto> responses  = accountService.adminGetAllUserAccount(username,0,5,"id","desc");
+
+            assertNotNull(responses);
+
+            assertEquals(1, responses.getTotalElements());
+
+        }
+
+        @Test
+        void shouldFailGetAllAccountForAdmin_AdminNotFound() throws Exception {
+             mvc.perform(get("/api/v1/admin/accounts/fetch")
+                             .param("page","0")
+                             .param("size","5")
+                             .param("sortBy","id")
+                             .param("direction","desc"))
+                     .andExpect(status().isUnauthorized());
+        }
+
+        @Test
+        void shouldGetAccountByIdForAdmin() throws Exception {
+            Long id = testAccount.getId();
+            mvc.perform(get("/api/v1/admin/accounts/fetch/" +id)
+                    .header("Authorization","Bearer " + tokenAdminUser))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.accountNum").value(testAccount.getAccountNum()))
+                    .andExpect(jsonPath("$.userId").value(testAccount.getUser().getId()))
+                    .andExpect(jsonPath("$.balance").value(new BigDecimal("0.0")))
+                    .andExpect(jsonPath("$.currency").value(testAccount.getCurrency().toString()))
+                    .andExpect(jsonPath("$.id").value(testAccount.getId()));
+        }
+
+
+        @Test
+        void shouldFailGetAccountByIdForAdmin_AccountNotFound() throws Exception {
+            mvc.perform(get("/api/v1/admin/accounts/fetch/113")
+                    .header("Authorization","Bearer " + tokenAdminUser))
+                    .andExpect(status().isNotFound());
+        }
+
+        @Test
+        void shouldFailGetAccountByIdForAdmin_NotAdmin() throws Exception {
+            mvc.perform(get("/api/v1/admin/accounts/fetch/113")
+                            .header("Authorization","Bearer " + tokenTestUser))
+                    .andExpect(status().isForbidden());
+        }
+
+        @Test
+        void shouldFailGetAccountByIdForAdmin_UnAuthorized() throws Exception {
+            mvc.perform(get("/api/v1/admin/accounts/fetch/113"))
+                    .andExpect(status().isUnauthorized());
+        }
+
+        @Test
+        void shouldGetAccountByAccountNumForAdmin() throws Exception {
+            Long accountNum = testAccount.getAccountNum();
+            mvc.perform(get("/api/v1/admin/accounts/fetch/accNum/"+accountNum)
+                    .header("Authorization","Bearer " + tokenAdminUser))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.accountNum").value(testAccount.getAccountNum()))
+                    .andExpect(jsonPath("$.userId").value(testAccount.getUser().getId()))
+                    .andExpect(jsonPath("$.balance").value(new BigDecimal("0.0")))
+                    .andExpect(jsonPath("$.currency").value(testAccount.getCurrency().toString()))
+                    .andExpect(jsonPath("$.id").value(testAccount.getId()));
+        }
+
+        @Test
+        void shouldFailGetAccountByAccountNumForAdmin_AccountNotFound() throws Exception {
+            mvc.perform(get("/api/v1/admin/accounts/fetch/accNum/26485158")
+                    .header("Authorization", "Bearer " + tokenAdminUser))
+                    .andExpect(status().isNotFound());
+        }
+
+        @Test
+        void shouldFailGetAccountByAccountNumForAdmin_Unauthorized() throws Exception {
+            Long acc = testAccount.getAccountNum();
+            mvc.perform(get("/api/v1/admin/accounts/fetch/accNum/" +acc)
+                            .header("Authorization", "Bearer " + tokenTestUser))
+                    .andExpect(status().isForbidden());
+        }
+
+
+        @Test
+        void shouldFailGetAccountByAccountNumForAdmin_NoAdminFound() throws Exception {
+            Long acc = testAccount.getAccountNum();
+            mvc.perform(get("/api/v1/admin/accounts/fetch/accNum/" +acc))
+                    .andExpect(status().isUnauthorized());
+        }
+
+
+
     }
 }

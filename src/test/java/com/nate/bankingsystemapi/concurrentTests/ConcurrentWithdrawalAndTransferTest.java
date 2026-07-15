@@ -1,16 +1,16 @@
 package com.nate.bankingsystemapi.concurrentTests;
 
-import com.nate.bankingsystemapi.dto.FundsRequest;
-import com.nate.bankingsystemapi.dto.TransferRequest;
-import com.nate.bankingsystemapi.model.Account;
-import com.nate.bankingsystemapi.model.CurrencyCode;
-import com.nate.bankingsystemapi.model.User;
+import com.nate.bankingsystemapi.dto.transaction.FundsRequest;
+import com.nate.bankingsystemapi.dto.transaction.TransferRequest;
+import com.nate.bankingsystemapi.model.account.entity.Account;
+import com.nate.bankingsystemapi.model.account.enums.CurrencyCode;
+import com.nate.bankingsystemapi.model.user.entity.User;
 import com.nate.bankingsystemapi.repository.AccountRepository;
 import com.nate.bankingsystemapi.repository.LedgerEntryRepository;
 import com.nate.bankingsystemapi.repository.TransactionRepository;
 import com.nate.bankingsystemapi.repository.UserRepository;
-import com.nate.bankingsystemapi.service.ITransactionService;
-import com.nate.bankingsystemapi.service.TransactionFailureService;
+import com.nate.bankingsystemapi.service.transaction.ITransactionService;
+import com.nate.bankingsystemapi.service.transaction.TransactionFailureService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.RepeatedTest;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,6 +20,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -71,11 +72,11 @@ public class ConcurrentWithdrawalAndTransferTest {
         repoU.save(testUser2);
 
         testAcc1 = Account.create(testUser, CurrencyCode.ZAR);
-        testAcc1.changeBalance(1000L);
+        testAcc1.credit(BigDecimal.valueOf(1000));
         repo.save(testAcc1);
 
         testAcc2 = Account.create(testUser2,CurrencyCode.ZAR);
-        testAcc2.changeBalance(500L);
+        testAcc2.credit(BigDecimal.valueOf(500));
         repo.save(testAcc2);
     }
 
@@ -83,7 +84,7 @@ public class ConcurrentWithdrawalAndTransferTest {
     @RepeatedTest(10)
     void testConcurrentWithdrawal() throws InterruptedException {
         Long accountNum = testAcc1.getAccountNum();
-        Long withdrawalAmount = 300L;
+        BigDecimal withdrawalAmount = BigDecimal.valueOf(300);
         int threadCount = 5;
 
         ExecutorService executor = Executors.newFixedThreadPool(threadCount);
@@ -99,7 +100,7 @@ public class ConcurrentWithdrawalAndTransferTest {
                 try {
                     startLatch.await();
                     String req = UUID.randomUUID().toString();
-                    transactionService.withdrawFunds(new FundsRequest(accountNum,withdrawalAmount,req),testUser);
+                    transactionService.withdrawFunds(new FundsRequest(accountNum,withdrawalAmount,req),testUser.getUsername());
                     successCount.incrementAndGet();
                 }
                 catch (Exception e){
@@ -127,8 +128,8 @@ public class ConcurrentWithdrawalAndTransferTest {
         assertEquals(threadCount, success+failure);
         assertTrue(success<=3);
 
-        assertEquals(1000L - (success * withdrawalAmount),updatedAcc.getBalance());
-        assertTrue(updatedAcc.getBalance()>=0);
+        assertEquals(new BigDecimal("1000.00").subtract(BigDecimal.valueOf(success).multiply(withdrawalAmount)),updatedAcc.getBalance());
+        assertTrue(updatedAcc.getBalance().compareTo(BigDecimal.ZERO)>=0);
 
         assertEquals(success, tRepo.count());
         assertEquals(success, lRepo.count());
@@ -139,8 +140,8 @@ public class ConcurrentWithdrawalAndTransferTest {
    // @Timeout(value = 10,unit = TimeUnit.SECONDS)
     void testSimultaneousDepositAndWithdrawal() throws InterruptedException {
         Long accountNum = testAcc1.getAccountNum();
-        Long withdrawalAmount = 500L;
-        Long depositAmount = 100L;
+        BigDecimal withdrawalAmount = BigDecimal.valueOf(500);
+        BigDecimal depositAmount = BigDecimal.valueOf(100);
         int threadCount = 10;
 
         ExecutorService executor = Executors.newFixedThreadPool(threadCount);
@@ -159,7 +160,7 @@ public class ConcurrentWithdrawalAndTransferTest {
             try{
                 withdrawStartLatch.await();
                 String req = UUID.randomUUID().toString();
-                transactionService.withdrawFunds(new FundsRequest(accountNum,withdrawalAmount,req),testUser);
+                transactionService.withdrawFunds(new FundsRequest(accountNum,withdrawalAmount,req),testUser.getUsername());
                 withdrawSuccessCount.incrementAndGet();
             } catch (Exception e) {
                 System.out.println("Failed to withdraw: " +e.getMessage() );
@@ -174,7 +175,7 @@ public class ConcurrentWithdrawalAndTransferTest {
             try{
                 depositStartLatch.await();
                 String req = UUID.randomUUID().toString();
-                transactionService.depositFunds(new FundsRequest(accountNum,depositAmount,req),testUser);
+                transactionService.depositFunds(new FundsRequest(accountNum,depositAmount,req),testUser.getUsername());
                 depositSuccessCount.incrementAndGet();
             } catch (Exception e) {
                 System.out.println("Failed to Deposit: " + e.getMessage());
@@ -196,11 +197,11 @@ public class ConcurrentWithdrawalAndTransferTest {
         withdrawDoneLatch.await();
 
         Account updatedAcc = repo.findByAccountNum(accountNum).orElseThrow();
-        Long expectedBalance = 1000L + (depositSuccessCount.get()*depositAmount) - (withdrawSuccessCount.get() * withdrawalAmount);
+        BigDecimal expectedBalance = new BigDecimal("1000.00").add(BigDecimal.valueOf(depositSuccessCount.get()).multiply(depositAmount)).subtract(BigDecimal.valueOf(withdrawSuccessCount.get()).multiply( withdrawalAmount));
 
         assertEquals(expectedBalance,updatedAcc.getBalance());
 
-        assertTrue(updatedAcc.getBalance()>=0);
+        assertTrue(updatedAcc.getBalance().compareTo(BigDecimal.ZERO)>=0);
 
 
         executor.shutdown();
@@ -216,7 +217,7 @@ public class ConcurrentWithdrawalAndTransferTest {
         Long fromAcc = testAcc1.getAccountNum();
         Long toAcc = testAcc2.getAccountNum();
         int threadCount = 7;
-        Long transferAmount = 200L;
+        BigDecimal transferAmount = BigDecimal.valueOf(200);
 
 
 
@@ -233,9 +234,9 @@ public class ConcurrentWithdrawalAndTransferTest {
             try {
                 startLatch.await();
                 String reqId = UUID.randomUUID().toString();
-                TransferRequest transfer = new TransferRequest(fromAcc,toAcc,5000L,reqId);
+                TransferRequest transfer = new TransferRequest(fromAcc,toAcc,BigDecimal.valueOf(5000),reqId);
 
-                transactionService.transfer(transfer,testUser);
+                transactionService.transfer(transfer,testUser.getUsername());
                 successCount.incrementAndGet();
             }
             catch (Exception e){
@@ -268,12 +269,12 @@ public class ConcurrentWithdrawalAndTransferTest {
 
         assertTrue(success<=5);
 
-        assertEquals(1000L - (success * transferAmount),from.getBalance());
-        assertEquals(500L  + (success * transferAmount),to.getBalance());
+        assertEquals(new BigDecimal("1000.00").subtract(BigDecimal.valueOf(success).multiply(transferAmount)),from.getBalance());
+        assertEquals(new BigDecimal("500.00").add(BigDecimal.valueOf(success).multiply(transferAmount)),to.getBalance());
 
-        assertEquals(1500L,from.getBalance() + to.getBalance());
+        assertEquals(new BigDecimal("1500.00"),from.getBalance().add(to.getBalance()));
 
-        assertTrue(from.getBalance()>=0);
+        assertTrue(from.getBalance().compareTo(BigDecimal.ZERO)>=0);
 
         assertEquals(successCount.get() *2L,lRepo.count());
         assertEquals(successCount.get() ,tRepo.count());
@@ -283,7 +284,7 @@ public class ConcurrentWithdrawalAndTransferTest {
     @RepeatedTest(10)
     void testIdempotencyWithdrawal() throws InterruptedException {
         Long fromAcc = testAcc1.getAccountNum();
-        Long withdrawAmount  = 200L;
+        BigDecimal withdrawAmount  = BigDecimal.valueOf(200);
         int threadCount = 7;
         String reqId = UUID.randomUUID().toString();
 
@@ -297,7 +298,7 @@ public class ConcurrentWithdrawalAndTransferTest {
         Runnable withdrawalTask = () -> {
             try{
                 startLatch.await();
-                transactionService.withdrawFunds(new FundsRequest(fromAcc,withdrawAmount,reqId),testUser);
+                transactionService.withdrawFunds(new FundsRequest(fromAcc,withdrawAmount,reqId),testUser.getUsername());
                 successCount.incrementAndGet();
             }
             catch (Exception e){
@@ -321,12 +322,12 @@ public class ConcurrentWithdrawalAndTransferTest {
 
         assertEquals(threadCount - 1, failureCount.get());
 
-        assertTrue(updatedAcc.getBalance()>=0);
+        assertTrue(updatedAcc.getBalance().compareTo(BigDecimal.ZERO)>=0);
 
         assertEquals(1, successCount.get());
         assertEquals(6,failureCount.get());
 
-        assertEquals(1000 - (successCount.get() * withdrawAmount), updatedAcc.getBalance());
+        assertEquals(new BigDecimal("1000.00").subtract(BigDecimal.valueOf(successCount.get()).multiply(withdrawAmount)), updatedAcc.getBalance());
         assertEquals(successCount.get() ,tRepo.count());
         assertEquals(successCount.get() ,lRepo.count());
     }
@@ -334,7 +335,7 @@ public class ConcurrentWithdrawalAndTransferTest {
     @RepeatedTest(10)
     void testIdempotencyDeposit() throws InterruptedException {
         Long fromAcc = testAcc1.getAccountNum();
-        Long depositAmount  = 200L;
+        BigDecimal depositAmount  = BigDecimal.valueOf(200);
         int threadCount = 7;
         String reqId = UUID.randomUUID().toString();
 
@@ -347,7 +348,7 @@ public class ConcurrentWithdrawalAndTransferTest {
         Runnable depositTask = () -> {
             try{
                 startLatch.await();
-                transactionService.depositFunds(new FundsRequest(fromAcc,depositAmount,reqId),testUser);
+                transactionService.depositFunds(new FundsRequest(fromAcc,depositAmount,reqId),testUser.getUsername());
 
                 successCount.incrementAndGet();
             }
@@ -372,7 +373,7 @@ public class ConcurrentWithdrawalAndTransferTest {
 
         assertEquals(1, successCount.get());
 
-        assertEquals(1000 + depositAmount, updatedAcc.getBalance());
+        assertEquals(new BigDecimal("1000.00").add(depositAmount), updatedAcc.getBalance());
 
         assertEquals(successCount.get() ,tRepo.count());
         assertEquals(successCount.get() ,lRepo.count());
@@ -382,7 +383,7 @@ public class ConcurrentWithdrawalAndTransferTest {
     void testIdempotencyTransfer() throws InterruptedException {
         Long fromAcc = testAcc1.getAccountNum();
         Long toAcc = testAcc2.getAccountNum();
-        Long transferAmount = 300L;
+        BigDecimal transferAmount = BigDecimal.valueOf(300);
         String reqId = UUID.randomUUID().toString();
         int threadCount = 7;
 
@@ -397,7 +398,7 @@ public class ConcurrentWithdrawalAndTransferTest {
             try{
                 startLatch.await();
                 TransferRequest transfer = new TransferRequest(fromAcc,toAcc,transferAmount,reqId);
-                transactionService.transfer(transfer,testUser);
+                transactionService.transfer(transfer,testUser.getUsername());
                 successCount.incrementAndGet();
             }
             catch (Exception e){
@@ -424,8 +425,8 @@ public class ConcurrentWithdrawalAndTransferTest {
         assertEquals(1, successCount.get());
         assertEquals(6, failureCount.get());
 
-        assertEquals(1000 - transferAmount, updatedFromAcc.getBalance());
-        assertEquals(500 + transferAmount, updtaedToAcc.getBalance());
+        assertEquals(new BigDecimal("1000.00").subtract(transferAmount), updatedFromAcc.getBalance());
+        assertEquals(new BigDecimal("500.00").add(transferAmount), updtaedToAcc.getBalance());
 
         assertEquals(successCount.get() ,tRepo.count());
         assertEquals(successCount.get() * 2L ,lRepo.count());
