@@ -1,7 +1,7 @@
 package com.nate.bankingsystemapi.seed;
 
-import com.nate.bankingsystemapi.model.Role;
-import com.nate.bankingsystemapi.model.User;
+import com.nate.bankingsystemapi.model.user.entity.User;
+import com.nate.bankingsystemapi.model.user.enums.Role;
 import com.nate.bankingsystemapi.repository.UserRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.boot.CommandLineRunner;
