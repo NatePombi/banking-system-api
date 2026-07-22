@@ -4,14 +4,14 @@ import com.nate.bankingsystemapi.dto.transaction.FundsRequest;
 import com.nate.bankingsystemapi.dto.account.LockedAccounts;
 import com.nate.bankingsystemapi.dto.transaction.TransactionDto;
 import com.nate.bankingsystemapi.dto.transaction.TransferRequest;
-import com.nate.bankingsystemapi.exception.AccountNotFoundException;
-import com.nate.bankingsystemapi.exception.DuplicateRequestException;
-import com.nate.bankingsystemapi.exception.UserNotFoundException;
+import com.nate.bankingsystemapi.exception.*;
 import com.nate.bankingsystemapi.mapper.TransactionMapper;
 import com.nate.bankingsystemapi.model.account.entity.Account;
 import com.nate.bankingsystemapi.model.transaction.entity.Transactions;
 import com.nate.bankingsystemapi.model.user.entity.User;
-import com.nate.bankingsystemapi.repository.*;
+import com.nate.bankingsystemapi.repository.AccountRepository;
+import com.nate.bankingsystemapi.repository.TransactionRepository;
+import com.nate.bankingsystemapi.repository.UserRepository;
 import com.nate.bankingsystemapi.service.audit.AuditService;
 import com.nate.bankingsystemapi.service.ledger.LedgerService;
 import lombok.AllArgsConstructor;
@@ -28,10 +28,9 @@ import java.util.List;
 @AllArgsConstructor
 public class TransactionService implements ITransactionService {
 
-    private final TransactionRepository repo;
-    private final AccountRepository repoA;
-    private final UserRepository repoU;
-    private final TransactionFailureService transactionFailureService;
+    private final TransactionRepository transactionRepository;
+    private final AccountRepository accountRepository;
+    private final UserRepository userRepository;
     private final LedgerService ledgerService;
     private final AuditService auditService;
 
@@ -40,7 +39,7 @@ public class TransactionService implements ITransactionService {
     @Override
     public TransactionDto transfer(TransferRequest request, String username) {
 
-        User user = validateUser(username);
+        User user = findUser(username);
 
         validateAccounts(request);
 
@@ -57,12 +56,13 @@ public class TransactionService implements ITransactionService {
 
             validateOwnership(from,user);
 
-            validateAmount(request.getAmount(),from.getBalance());
+            validatePositiveAmount(request.getAmount());
+            validateSufficientAmount(request.getAmount(),from.getBalance());
 
             from.debit(request.getAmount());
             to.credit(request.getAmount());
 
-            repoA.saveAll(List.of(from,to));
+            accountRepository.saveAll(List.of(from,to));
 
             ledgerService.recordDebit(transactions,from,request.getAmount());
             ledgerService.recordCredit(transactions,to,request.getAmount());
@@ -79,7 +79,7 @@ public class TransactionService implements ITransactionService {
 
             transactions.markFailed(e.getMessage());
 
-            repo.save(transactions);
+            transactionRepository.save(transactions);
 
             throw e;
         }
@@ -92,7 +92,7 @@ public class TransactionService implements ITransactionService {
     public String depositFunds(FundsRequest req, String username) {
 
         //throws exception if User not found
-        User user = validateUser(username);
+        User user = findUser(username);
 
         //Create transaction (Idempotency gate)
         Transactions transactions = createTransaction(req.getRequestID());
@@ -100,12 +100,13 @@ public class TransactionService implements ITransactionService {
             transactions.markProcessing();
 
             //Fetching Account by id, throws exception if not found
-            Account acc = repoA.findByAccountNumForUpdate(req.getAccountNum())
+            Account acc = accountRepository.findByAccountNumForUpdate(req.getAccountNum())
                     .orElseThrow(AccountNotFoundException::new);
 
             //checks if user ownership, throws exception if user not owner
             validateOwnership(acc,user);
 
+            validatePositiveAmount(req.getAmount());
 
             //Performs the deposit
             acc.credit(req.getAmount());
@@ -123,7 +124,7 @@ public class TransactionService implements ITransactionService {
         catch (Exception e){
             transactions.markFailed(e.getMessage());
 
-            repo.save(transactions);
+            transactionRepository.save(transactions);
 
             throw e;
         }
@@ -134,7 +135,7 @@ public class TransactionService implements ITransactionService {
     public String withdrawFunds(FundsRequest req, String username) {
 
         //throws exception if User not found
-        User user = validateUser(username);
+        User user = findUser(username);
 
         // Creating transaction (Idempotency gate)
         Transactions transactions = createTransaction(req.getRequestID());
@@ -143,7 +144,7 @@ public class TransactionService implements ITransactionService {
             transactions.markProcessing();
 
             //Fetching Account by id, throws exception if not found
-            Account acc = repoA.findByAccountNumForUpdate(req.getAccountNum())
+            Account acc = accountRepository.findByAccountNumForUpdate(req.getAccountNum())
                     .orElseThrow(AccountNotFoundException::new);
 
             //checks if user ownership, throws exception if user not owner
@@ -151,7 +152,8 @@ public class TransactionService implements ITransactionService {
 
 
             //Checks if amount is enough for withdraw, throws exception if amount insufficient
-            validateAmount(req.getAmount(),acc.getBalance());
+            validatePositiveAmount(req.getAmount());
+            validateSufficientAmount(req.getAmount(),acc.getBalance());
 
             //Performs the withdrawal
             acc.debit(req.getAmount());
@@ -160,6 +162,8 @@ public class TransactionService implements ITransactionService {
             //save to Ledger
             ledgerService.recordDebit(transactions,acc,req.getAmount());
 
+            transactions.markSuccess();
+
             //Returns Success message
             return "Successfully withdrew Funds " + req.getAmount() + " " + acc.getCurrency();
         }
@@ -167,7 +171,7 @@ public class TransactionService implements ITransactionService {
         catch (Exception e){
             transactions.markFailed(e.getMessage());
 
-            repo.save(transactions);
+            transactionRepository.save(transactions);
             throw e;
         }
     }
@@ -178,7 +182,7 @@ public class TransactionService implements ITransactionService {
         Transactions transactions = Transactions.create(key);
 
         try {
-            return repo.save(transactions);
+            return transactionRepository.save(transactions);
         }
         catch (DataIntegrityViolationException e){
             throw new DuplicateRequestException("Request already processed");
@@ -191,8 +195,8 @@ public class TransactionService implements ITransactionService {
         Long acc1 = Math.min(request.getFromAccount(), request.getToAccount());
         Long acc2 = Math.max(request.getFromAccount(), request.getToAccount());
 
-        Account accA = repoA.findByAccountNumForUpdate(acc1).orElseThrow(AccountNotFoundException::new);
-        Account accB = repoA.findByAccountNumForUpdate(acc2).orElseThrow(AccountNotFoundException::new);
+        Account accA = accountRepository.findByAccountNumForUpdate(acc1).orElseThrow(AccountNotFoundException::new);
+        Account accB = accountRepository.findByAccountNumForUpdate(acc2).orElseThrow(AccountNotFoundException::new);
 
         Account from = acc1.equals(request.getFromAccount()) ? accA: accB;
         Account to = acc2.equals(request.getToAccount()) ? accB:accA;
@@ -200,14 +204,8 @@ public class TransactionService implements ITransactionService {
         return new LockedAccounts(from, to);
     }
 
-    private User validateUser(String username){
-        User user = repoU.findByUsername(username).orElseThrow(()-> new UserNotFoundException(username));
-
-        if(!repoA.existsByUser(user)){
-            throw new AccountNotFoundException(user.getUsername());
-        }
-
-        return user;
+    private User findUser(String username){
+        return userRepository.findByUsername(username).orElseThrow(()-> new UserNotFoundException(username));
     }
 
     private void validateAccounts(TransferRequest request){
@@ -225,20 +223,23 @@ public class TransactionService implements ITransactionService {
         }
     }
 
-    private void validateAmount(BigDecimal amount, BigDecimal balance){
-
+    private void validatePositiveAmount(BigDecimal amount){
         if(amount == null){
-            throw new IllegalArgumentException("Amount is required");
+            throw new NoAmountException("Amount is required");
         }
 
         if(amount.compareTo(BigDecimal.ZERO) <= 0){
-            throw new IllegalArgumentException("Amount must be greater than zero");
+            throw new InvalidAmountException("Amount must be greater than zero");
         }
 
+    }
+
+    private void validateSufficientAmount(BigDecimal amount, BigDecimal balance){
         if (amount.compareTo(balance) > 0){
-            throw new IllegalArgumentException("Insufficient balance");
+            throw new InsufficientAmountException("Insufficient balance");
         }
     }
+
 
     private void validateOwnership(Account fromAccount,User user){
 
@@ -247,9 +248,4 @@ public class TransactionService implements ITransactionService {
         }
 
     }
-
-
-
-
-
 }

@@ -10,7 +10,6 @@ import com.nate.bankingsystemapi.repository.LedgerEntryRepository;
 import com.nate.bankingsystemapi.repository.TransactionRepository;
 import com.nate.bankingsystemapi.repository.UserRepository;
 import com.nate.bankingsystemapi.service.transaction.ITransactionService;
-import com.nate.bankingsystemapi.service.transaction.TransactionFailureService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.RepeatedTest;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -49,8 +48,7 @@ public class ConcurrentWithdrawalAndTransferTest {
     private LedgerEntryRepository lRepo;
     @Autowired
     private TransactionRepository tRepo;
-    @Autowired
-    private TransactionFailureService failureService;
+
 
     private User testUser;
     private User testUser2;

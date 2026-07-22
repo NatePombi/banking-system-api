@@ -75,9 +75,21 @@ public class GlobalExceptionHandler {
         return new ApiError(Instant.now(),HttpStatus.BAD_REQUEST.value(), "unprocessable Entity",msg, req.getRequestURI());
     }
 
+    @ExceptionHandler(NoAmountException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ApiError handlesNoAmountException(NoAmountException ex, jakarta.servlet.http.HttpServletRequest req){
+        return new ApiError(Instant.now(),HttpStatus.BAD_REQUEST.value(), "Bad Request",ex.getMessage(),req.getRequestURI());
+    }
+
+    @ExceptionHandler(InvalidAmountException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ApiError handlesInvalidAmountException(InvalidAmountException ex, jakarta.servlet.http.HttpServletRequest req){
+        return new ApiError(Instant.now(),HttpStatus.BAD_REQUEST.value(), "Bad Request",ex.getMessage(),req.getRequestURI());
+    }
+
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public ApiError handleValidation(MethodArgumentTypeMismatchException ex, jakarta.servlet.http.HttpServletRequest req){
+    public ApiError handleValidationException(MethodArgumentTypeMismatchException ex, jakarta.servlet.http.HttpServletRequest req){
         return new ApiError(Instant.now(),HttpStatus.BAD_REQUEST.value(),"Bad Request",ex.getMessage(),req.getRequestURI());
     }
 
@@ -87,11 +99,19 @@ public class GlobalExceptionHandler {
         return new ApiError(Instant.now(),HttpStatus.BAD_REQUEST.value(),"Bad Request",ex.getMessage(),req.getRequestURI());
     }
 
+    @ExceptionHandler(InsufficientAmountException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ApiError handleInsufficientAmountException(InsufficientAmountException ex,jakarta.servlet.http.HttpServletRequest req){
+        return new ApiError(Instant.now(),HttpStatus.BAD_REQUEST.value(),"Bad Request",ex.getMessage(),req.getRequestURI());
+    }
+
     @ExceptionHandler(DuplicateRequestException.class)
     @ResponseStatus(HttpStatus.CONFLICT)
     public ApiError handleDuplicate(DuplicateRequestException ex, jakarta.servlet.http.HttpServletRequest req){
         return new ApiError(Instant.now(),HttpStatus.CONFLICT.value(), "Duplicate Request",ex.getMessage(),req.getRequestURI());
     }
+
+
 
     @ExceptionHandler(UsernameExistsException.class)
     @ResponseStatus(HttpStatus.CONFLICT)

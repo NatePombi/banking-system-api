@@ -5,6 +5,7 @@ import com.nate.bankingsystemapi.dto.transaction.TransactionDto;
 import com.nate.bankingsystemapi.dto.transaction.TransferRequest;
 import com.nate.bankingsystemapi.exception.AccountNotFoundException;
 import com.nate.bankingsystemapi.exception.DuplicateRequestException;
+import com.nate.bankingsystemapi.exception.InsufficientAmountException;
 import com.nate.bankingsystemapi.exception.UserNotFoundException;
 import com.nate.bankingsystemapi.model.account.entity.Account;
 import com.nate.bankingsystemapi.model.account.enums.CurrencyCode;
@@ -15,7 +16,6 @@ import com.nate.bankingsystemapi.model.user.entity.User;
 import com.nate.bankingsystemapi.repository.*;
 import com.nate.bankingsystemapi.service.audit.AuditService;
 import com.nate.bankingsystemapi.service.ledger.LedgerService;
-import com.nate.bankingsystemapi.service.transaction.TransactionFailureService;
 import com.nate.bankingsystemapi.service.transaction.TransactionService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
@@ -48,8 +48,6 @@ public class TransactionsServiceTest {
     @Mock
     private LedgerEntryRepository repoL;
     @Mock
-    private TransactionFailureService failureService;
-    @Mock
     private LedgerService ledgerService;
     @Mock
     private AuditService auditService;
@@ -81,7 +79,6 @@ public class TransactionsServiceTest {
         @Test
         void testTransfer_Success() {
             when(repoU.findByUsername(testUser.getUsername())).thenReturn(Optional.of(testUser));
-            when(repoA.existsByUser(testUser)).thenReturn(true);
             when(repoT.save(any(Transactions.class))).thenReturn(testTransaction);
             when(repoA.findByAccountNumForUpdate(testAccount.getAccountNum())).thenReturn(Optional.of(testAccount));
             when(repoA.findByAccountNumForUpdate(testAccount2.getAccountNum())).thenReturn(Optional.of(testAccount2));
@@ -102,8 +99,7 @@ public class TransactionsServiceTest {
         @Test
         void shouldFailTransferDuplicateRequest() {
             when(repoU.findByUsername(testUser.getUsername())).thenReturn(Optional.of(testUser));
-            when(repoA.existsByUser(testUser)).thenReturn(true);
-            when(repoT.save(any(Transactions.class))).thenThrow(new DuplicateRequestException("Request already processed"));
+            when(repoT.save(any(Transactions.class))).thenThrow(DuplicateRequestException.class);
             TransferRequest transferRequest = new TransferRequest(testAccount.getAccountNum(),testAccount2.getAccountNum(),BigDecimal.valueOf(5000),reqID);
 
             assertThrows(DuplicateRequestException.class,()->{
@@ -134,7 +130,6 @@ public class TransactionsServiceTest {
         @Test
         void testTransfer_FailFromAccountNotFound(){
             when(repoU.findByUsername(testUser.getUsername())).thenReturn(Optional.of(testUser));
-            when(repoA.existsByUser(testUser)).thenReturn(Boolean.TRUE);
             when(repoT.save(any(Transactions.class))).thenReturn(testTransaction);
             TransferRequest transfer = new TransferRequest(123567890L,testAccount2.getAccountNum(),BigDecimal.valueOf(5000),reqID);
 
@@ -148,7 +143,6 @@ public class TransactionsServiceTest {
         @Test
         void testTransfer_FailToAccountNotFound(){
             when(repoU.findByUsername(testUser.getUsername())).thenReturn(Optional.of(testUser));
-            when(repoA.existsByUser(testUser)).thenReturn(Boolean.TRUE);
             when(repoT.save(any(Transactions.class))).thenReturn(testTransaction);
             TransferRequest transfer = new TransferRequest(testAccount.getAccountNum(),987654321L,BigDecimal.valueOf(5000),reqID);
 
@@ -163,7 +157,6 @@ public class TransactionsServiceTest {
         void testTransfer_FailUnauthorizedAccess(){
             User notOwner = new TestUser(12L,"Mark","mark","hashed");
             when(repoU.findByUsername(notOwner.getUsername())).thenReturn(Optional.of(notOwner));
-            when(repoA.existsByUser(notOwner)).thenReturn(Boolean.TRUE);
             when(repoT.save(any(Transactions.class))).thenReturn(testTransaction);
             when(repoA.findByAccountNumForUpdate(testAccount.getAccountNum())).thenReturn(Optional.of(testAccount));
             when(repoA.findByAccountNumForUpdate(testAccount2.getAccountNum())).thenReturn(Optional.of(testAccount2));
@@ -178,14 +171,13 @@ public class TransactionsServiceTest {
         @Test
         void testTransfer_FailInsufficientFunds(){
             when(repoU.findByUsername(testUser.getUsername())).thenReturn(Optional.of(testUser));
-            when(repoA.existsByUser(testUser)).thenReturn(Boolean.TRUE);
             when(repoA.findByAccountNumForUpdate(testAccount.getAccountNum())).thenReturn(Optional.of(testAccount));
             when(repoA.findByAccountNumForUpdate(testAccount2.getAccountNum())).thenReturn(Optional.of(testAccount2));
             when(repoT.save(any(Transactions.class))).thenReturn(testTransaction);
 
             TransferRequest transfer = new TransferRequest(testAccount.getAccountNum(),testAccount2.getAccountNum(),BigDecimal.valueOf(500000),reqID);
 
-            assertThrows(IllegalArgumentException.class,()->{
+            assertThrows(InsufficientAmountException.class,()->{
                 service.transfer(transfer,"test");
             });
         }
@@ -201,7 +193,6 @@ public class TransactionsServiceTest {
             FundsRequest req = new FundsRequest(testAccount.getAccountNum(),amount,reqID);
             when(repoU.findByUsername(testUser.getUsername())).thenReturn(Optional.of(testUser));
             when(repoT.save(any(Transactions.class))).thenReturn(testTransaction);
-            when(repoA.existsByUser(testUser)).thenReturn(Boolean.TRUE);
             when(repoA.findByAccountNumForUpdate(testAccount.getAccountNum())).thenReturn(Optional.of(testAccount));
 
             service.depositFunds(req,"test");
@@ -223,6 +214,7 @@ public class TransactionsServiceTest {
         void testDepositFunds_FailAccountNotFound(){
             FundsRequest req = new FundsRequest(3654897L,BigDecimal.valueOf(3000),reqID);
             when(repoU.findByUsername(testUser.getUsername())).thenReturn(Optional.of(testUser));
+            when(repoT.save(any(Transactions.class))).thenReturn(testTransaction);
             assertThrows(AccountNotFoundException.class,()->{
                 service.depositFunds(req,"test");
             });
@@ -236,7 +228,6 @@ public class TransactionsServiceTest {
             when(repoT.save(any(Transactions.class))).thenReturn(testTransaction);
             when(repoU.findByUsername(testUser1.getUsername())).thenReturn(Optional.of(testUser1));
             when(repoA.findByAccountNumForUpdate(testAccount.getAccountNum())).thenReturn(Optional.of(testAccount));
-            when(repoA.existsByUser(testUser1)).thenReturn(Boolean.TRUE);
 
             assertThrows(AccessDeniedException.class,()->{
                 service.depositFunds(req,testUser1.getUsername());
@@ -255,7 +246,6 @@ public class TransactionsServiceTest {
             FundsRequest req = new FundsRequest(testAccount.getAccountNum(),amount,reqID);
             when(repoU.findByUsername(testUser.getUsername())).thenReturn(Optional.of(testUser));
             when(repoA.findByAccountNumForUpdate(testAccount.getAccountNum())).thenReturn(Optional.of(testAccount));
-            when(repoA.existsByUser(testUser)).thenReturn(Boolean.TRUE);
             when(repoT.save(any(Transactions.class))).thenReturn(testTransaction);
 
             service.withdrawFunds(req,"test");
@@ -268,10 +258,9 @@ public class TransactionsServiceTest {
         void testWithdrawFunds_FailInsufficientFunds(){
             FundsRequest req = new FundsRequest(testAccount.getAccountNum(),BigDecimal.valueOf(20000),reqID);
             when(repoU.findByUsername(testUser.getUsername())).thenReturn(Optional.of(testUser));
-            when(repoA.existsByUser(testUser)).thenReturn(Boolean.TRUE);
             when(repoT.save(any(Transactions.class))).thenReturn(testTransaction);
             when(repoA.findByAccountNumForUpdate(testAccount.getAccountNum())).thenReturn(Optional.of(testAccount));
-            assertThrows(IllegalArgumentException.class,()->{
+            assertThrows(InsufficientAmountException.class,()->{
                 service.withdrawFunds(req,"test");
             });
         }
@@ -293,7 +282,6 @@ public class TransactionsServiceTest {
         void testWithdrawFunds_FailAccountNotFound(){
             FundsRequest req = new FundsRequest(987654321L,BigDecimal.valueOf(2000),reqID);
             when(repoU.findByUsername(testUser.getUsername())).thenReturn(Optional.of(testUser));
-            when(repoA.existsByUser(testUser)).thenReturn(Boolean.TRUE);
             when(repoT.save(any(Transactions.class))).thenReturn(testTransaction);
 
 
@@ -310,7 +298,6 @@ public class TransactionsServiceTest {
             FundsRequest req = new FundsRequest(testAccount.getAccountNum(),BigDecimal.valueOf(3000),reqID);
             when(repoT.save(any(Transactions.class))).thenReturn(testTransaction);
             when(repoU.findByUsername(testUser1.getUsername())).thenReturn(Optional.of(testUser1));
-            when(repoA.existsByUser(testUser1)).thenReturn(Boolean.TRUE);
             when(repoA.findByAccountNumForUpdate(testAccount.getAccountNum())).thenReturn(Optional.of(testAccount));
             assertThrows(AccessDeniedException.class,()->{
                 service.withdrawFunds(req,testUser1.getUsername());
