@@ -4,6 +4,7 @@ import com.nate.bankingsystemapi.dto.transaction.FundsRequest;
 import com.nate.bankingsystemapi.dto.transaction.TransferRequest;
 import com.nate.bankingsystemapi.model.account.entity.Account;
 import com.nate.bankingsystemapi.model.account.enums.CurrencyCode;
+import com.nate.bankingsystemapi.model.transaction.enums.Status;
 import com.nate.bankingsystemapi.model.user.entity.User;
 import com.nate.bankingsystemapi.repository.AccountRepository;
 import com.nate.bankingsystemapi.repository.LedgerEntryRepository;
@@ -129,7 +130,9 @@ public class ConcurrentWithdrawalAndTransferTest {
         assertEquals(new BigDecimal("1000.00").subtract(BigDecimal.valueOf(success).multiply(withdrawalAmount)),updatedAcc.getBalance());
         assertTrue(updatedAcc.getBalance().compareTo(BigDecimal.ZERO)>=0);
 
-        assertEquals(success, tRepo.count());
+        assertEquals(success, tRepo.countByStatus(Status.SUCCESS));
+        assertEquals(failure, tRepo.countByStatus(Status.FAILED));
+        assertEquals(threadCount,tRepo.count());
         assertEquals(success, lRepo.count());
     }
 
@@ -203,7 +206,7 @@ public class ConcurrentWithdrawalAndTransferTest {
 
 
         executor.shutdown();
-        assertEquals(depositSuccessCount.get() + withdrawSuccessCount.get(), tRepo.count());
+        assertEquals(depositSuccessCount.get() + withdrawSuccessCount.get(), tRepo.countByStatus(Status.SUCCESS));
         assertEquals(depositSuccessCount.get() + withdrawSuccessCount.get(), lRepo.count());
 
 
@@ -232,7 +235,7 @@ public class ConcurrentWithdrawalAndTransferTest {
             try {
                 startLatch.await();
                 String reqId = UUID.randomUUID().toString();
-                TransferRequest transfer = new TransferRequest(fromAcc,toAcc,BigDecimal.valueOf(5000),reqId);
+                TransferRequest transfer = new TransferRequest(fromAcc,toAcc,transferAmount,reqId);
 
                 transactionService.transfer(transfer,testUser.getUsername());
                 successCount.incrementAndGet();
@@ -275,7 +278,9 @@ public class ConcurrentWithdrawalAndTransferTest {
         assertTrue(from.getBalance().compareTo(BigDecimal.ZERO)>=0);
 
         assertEquals(successCount.get() *2L,lRepo.count());
-        assertEquals(successCount.get() ,tRepo.count());
+        assertEquals(successCount.get(),tRepo.countByStatus(Status.SUCCESS));
+        assertEquals(failureCount.get(),tRepo.countByStatus(Status.FAILED));
+        assertEquals(threadCount ,tRepo.count());
     }
 
 

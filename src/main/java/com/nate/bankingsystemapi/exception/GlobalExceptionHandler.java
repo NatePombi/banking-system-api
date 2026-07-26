@@ -35,6 +35,12 @@ public class GlobalExceptionHandler {
         return new ApiError(Instant.now(),HttpStatus.NOT_FOUND.value(), "Admin Not Found",ex.getMessage(),req.getRequestURI());
     }
 
+    @ExceptionHandler(TransactionNotFoundException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public ApiError handlesTransactionNotFoundException(TransactionNotFoundException ex, jakarta.servlet.http.HttpServletRequest req){
+        return new ApiError(Instant.now(),HttpStatus.NOT_FOUND.value(), "Transaction not found",ex.getMessage(),req.getRequestURI());
+    }
+
 
     @ExceptionHandler(AccessDeniedException.class)
     @ResponseStatus(HttpStatus.FORBIDDEN)
