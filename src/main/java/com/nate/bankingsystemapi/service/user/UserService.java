@@ -124,7 +124,7 @@ public class UserService implements IUserService {
      * Admin Retrieving user
      *
      * @param id is id of user that admin wats to retreive
-     * @param username is username of admin thats logged in
+     * @param username is username of admin that's logged in
      * @return a {@link UserDto} object
      * @throws AccessDeniedException if admin is not found
      * @throws UserNotFoundException if user with id given was not found

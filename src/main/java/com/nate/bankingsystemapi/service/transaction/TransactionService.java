@@ -19,7 +19,6 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
-import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
@@ -172,18 +171,6 @@ public class TransactionService implements ITransactionService {
         }
     }
 
-
-    private Transactions createTransaction(String key){
-        Transactions transactions = Transactions.create(key);
-
-        try {
-            return transactionRepository.save(transactions);
-        }
-        catch (DataIntegrityViolationException e){
-            throw new DuplicateRequestException("Request already processed");
-        }
-
-    }
 
     private LockedAccounts lockedAccounts(TransferRequest request){
 

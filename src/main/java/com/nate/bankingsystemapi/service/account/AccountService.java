@@ -34,7 +34,7 @@ public class AccountService implements IAccountService {
      * Creating Account for User
      *
      * @param postAccountDto a {@link PostAccountDto} object that has account details
-     * @param username is username of logged in User
+     * @param username is username of logged-in User
      * @return a {@link AccountDto} object
      * @throws UserNotFoundException if user with given username was not found
      * @throws com.nate.bankingsystemapi.exception.CurrencyCodeMismatchException if given currency code is invalid
