@@ -9,6 +9,8 @@ import com.nate.bankingsystemapi.model.transaction.entity.Transactions;
 import com.nate.bankingsystemapi.model.user.entity.User;
 import com.nate.bankingsystemapi.repository.*;
 import com.nate.bankingsystemapi.security.JwtService;
+import com.nate.bankingsystemapi.service.transaction.TransactionCreationService;
+import com.nate.bankingsystemapi.service.transaction.TransactionFailureService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -51,6 +53,10 @@ public class TransactionsIntegrationTest {
     private LedgerEntryRepository ledgerEntryRepository;
     @Autowired
     private TransactionRepository transactionRepository;
+    @Autowired
+    private TransactionFailureService transactionFailureService;
+    @Autowired
+    private TransactionCreationService transactionCreationService;
     @Autowired
     private PasswordEncoder encoder;
     @Autowired

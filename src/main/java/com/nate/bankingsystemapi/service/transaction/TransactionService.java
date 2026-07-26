@@ -19,6 +19,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
@@ -33,6 +34,8 @@ public class TransactionService implements ITransactionService {
     private final UserRepository userRepository;
     private final LedgerService ledgerService;
     private final AuditService auditService;
+    private final TransactionFailureService transactionFailureService;
+    private final TransactionCreationService transactionCreationService;
 
 
     @Transactional(isolation = Isolation.READ_COMMITTED)
@@ -43,7 +46,7 @@ public class TransactionService implements ITransactionService {
 
         validateAccounts(request);
 
-        Transactions transactions = createTransaction(request.getRequestID());
+        Transactions transactions = transactionCreationService.createTransaction(request.getRequestID());
 
 
         try{
@@ -68,6 +71,7 @@ public class TransactionService implements ITransactionService {
             ledgerService.recordCredit(transactions,to,request.getAmount());
 
             transactions.markSuccess();
+            transactionRepository.save(transactions);
 
             auditService.logTransfer(transactions,user,from,to, request.getAmount());
 
@@ -76,11 +80,7 @@ public class TransactionService implements ITransactionService {
         }
 
         catch (Exception e){
-
-            transactions.markFailed(e.getMessage());
-
-            transactionRepository.save(transactions);
-
+            transactionFailureService.failTransaction(transactions.getId(),e.getMessage());
             throw e;
         }
 
@@ -95,7 +95,7 @@ public class TransactionService implements ITransactionService {
         User user = findUser(username);
 
         //Create transaction (Idempotency gate)
-        Transactions transactions = createTransaction(req.getRequestID());
+        Transactions transactions = transactionCreationService.createTransaction(req.getRequestID());
         try {
             transactions.markProcessing();
 
@@ -116,16 +116,14 @@ public class TransactionService implements ITransactionService {
             ledgerService.recordCredit(transactions,acc,req.getAmount());
 
             transactions.markSuccess();
+            transactionRepository.save(transactions);
 
             //Returns Success message
             return "Successfully Deposited " + req.getAmount() + " " + acc.getCurrency();
         }
 
         catch (Exception e){
-            transactions.markFailed(e.getMessage());
-
-            transactionRepository.save(transactions);
-
+            transactionFailureService.failTransaction(transactions.getId(),e.getMessage());
             throw e;
         }
     }
@@ -138,7 +136,7 @@ public class TransactionService implements ITransactionService {
         User user = findUser(username);
 
         // Creating transaction (Idempotency gate)
-        Transactions transactions = createTransaction(req.getRequestID());
+        Transactions transactions = transactionCreationService.createTransaction(req.getRequestID());
 
         try {
             transactions.markProcessing();
@@ -163,19 +161,16 @@ public class TransactionService implements ITransactionService {
             ledgerService.recordDebit(transactions,acc,req.getAmount());
 
             transactions.markSuccess();
-
+            transactionRepository.save(transactions);
             //Returns Success message
             return "Successfully withdrew Funds " + req.getAmount() + " " + acc.getCurrency();
         }
 
         catch (Exception e){
-            transactions.markFailed(e.getMessage());
-
-            transactionRepository.save(transactions);
+            transactionFailureService.failTransaction(transactions.getId(),e.getMessage());
             throw e;
         }
     }
-
 
 
     private Transactions createTransaction(String key){
