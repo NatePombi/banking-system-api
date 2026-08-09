@@ -150,7 +150,6 @@ public class TransactionsServiceTest {
         void testTransfer_FailToAccountNotFound(){
             when(repoU.findByUsername(testUser.getUsername())).thenReturn(Optional.of(testUser));
             when(transactionCreationService.createTransaction(reqID)).thenReturn(testTransaction);
-           // when(repoT.save(any(Transactions.class))).thenReturn(testTransaction);
             TransferRequest transfer = new TransferRequest(testAccount.getAccountNum(),987654321L,BigDecimal.valueOf(5000),reqID);
 
 
