@@ -58,6 +58,7 @@ public class TransactionService implements ITransactionService {
 
             validateOwnership(from,user);
 
+
             validatePositiveAmount(request.getAmount());
             validateSufficientAmount(request.getAmount(),from.getBalance());
 
