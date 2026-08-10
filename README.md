@@ -1,13 +1,38 @@
-# Banking System API
+# Banking System API (Deployed Live)
 
 ![Java CI](https://github.com/NatePombi/banking-system-api/actions/workflows/test.yml/badge.svg)
 ![Java](https://img.shields.io/badge/Java-17-blue)
 [![codecov](https://codecov.io/gh/NatePombi/banking-system-api/branch/master/graph/badge.svg?token=YOUR_TOKEN)](https://codecov.io/gh/NatePombi/banking-system-api)
+![Spring Boot](https://img.shields.io/badge/SpringBoot-3.5.10-green)
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-Render-46E3B7?logo=render&logoColor=white)](https://banking-system-api-m9vx.onrender.com/swagger-ui/index.html)
 
 
 
 A secure and modular banking backend built with Spring Boot, following professional fintech architecture principles.
 Supports account management, money transfers, ledger entries, and audit logging with data integrity guaranteed by optimistic locking and transactional boundaries.
+
+---
+
+## Cloud Architecture
+
+Client → Render → PostgreSQL
+
+
+- Application hosted on Render
+- PostgreSQL database hosted on Render
+- Secure configuration using environment variables
+- Dockerized deployment
+
+---
+
+## Live Demo
+
+- Swagger UI:
+    - https://banking-system-api-m9vx.onrender.com/swagger-ui/index.html
+
+The API is publicly deployed and can be tested through the interactive Swagger documentation.
+
+The live API may take time to respond if the Render service has been idle.
 
 ---
 
@@ -24,7 +49,6 @@ Supports account management, money transfers, ledger entries, and audit logging 
 * Concurrency-safe transactions processing using pessimistic locking
 * Deadlock prevention via deterministic account lock ordering
 * Configurable transactions isolation levels for data consistency
-* Automatic retry mechanism for transient lock/contention failures
 * Optimistic locking support using versioning for additional safety
 * Idempotent transactions handling to prevent double processing
 * JUnit-based test coverage including concurrency and edge cases
@@ -53,8 +77,7 @@ Supports account management, money transfers, ledger entries, and audit logging 
 
 * ![Maven](https://img.shields.io/badge/Build-Maven-orange?logo=apachemaven)
 * ![Docker](https://img.shields.io/badge/Docker-Containerization-2496ED?logo=docker&logoColor=white)
-
-
+* [![Deployed on Render](https://img.shields.io/badge/Deployed%20on-Render-46E3B7?logo=render&logoColor=white)](https://render.com/)
 
 
 
@@ -62,8 +85,8 @@ Supports account management, money transfers, ledger entries, and audit logging 
 
 ### Future Plans
 
-* Integrate AWS
 * Adding End points for Ledger entry and Audit Logs
+* Add front end (Reacts)
 
 --- 
 ### Environment Variable
@@ -144,6 +167,37 @@ DB_PASSWORD=yourpassword
 
 ---
 
+## Deployment
+
+The application is deployed using Docker on Render.
+
+- Deployment Architecture
+
+GitHub
+
+↓
+
+Render
+
+↓
+
+Docker
+
+↓
+
+Spring Boot
+
+↓
+
+PostgreSQL
+
+
+Render hosts the Spring Boot application while PostgreSQL provides the persistent database.
+
+Sensitive configuration such as database credentials and JWT secrets is stored using environment variables rather than committed to the repository.
+
+---
+
 ### Status
 
 - This project is actively maintained and open for improvements and contributions.
@@ -155,7 +209,19 @@ DB_PASSWORD=yourpassword
 This section explains how to interact with the Banking System API, including available endpoints, request examples, and how to view live API documentation via Swagger UI.
 
 #### Base URl
+
+Local:
+
 - http://localhost:8080
+
+
+#### Swagger Documentation
+
+Live Swagger UI:
+
+- https://banking-system-api-m9vx.onrender.com/swagger-ui/index.html
+
+
 
 ### Endpoints Overview
 
@@ -242,8 +308,4 @@ Response:
 
 ---
 
-### Postman Collection
 
-You can import the full Postman collection to test the API:
-
-[📥 Download Postman Collection](./.docs/postman_collection.json)
