@@ -1,5 +1,8 @@
 package com.nate.bankingsystemapi.model.account.entity;
 
+import com.nate.bankingsystemapi.exception.InsufficientAmountException;
+import com.nate.bankingsystemapi.exception.InvalidAmountException;
+import com.nate.bankingsystemapi.exception.NoAmountException;
 import com.nate.bankingsystemapi.model.account.enums.CurrencyCode;
 import com.nate.bankingsystemapi.model.user.entity.User;
 import com.nate.bankingsystemapi.util.AccountNumGenerator;
@@ -59,10 +62,32 @@ public class Account {
     }
 
     public void debit(BigDecimal amount) {
+        if(amount == null){
+            throw new NoAmountException("Amount is required");
+        }
+
+        if(amount.compareTo(BigDecimal.ZERO) <= 0){
+            throw new InvalidAmountException("Amount must be greater than zero");
+        }
+
+
+        if (amount.compareTo(balance) > 0 ) {
+            throw new InsufficientAmountException("Insufficient balance");
+        }
+
+
         this.balance = balance.subtract(amount);
     }
 
     public void credit(BigDecimal amount) {
+        if(amount == null){
+            throw new NoAmountException("Amount is required");
+        }
+
+        if(amount.compareTo(BigDecimal.ZERO) <= 0){
+            throw new InvalidAmountException("Amount must be greater than zero");
+        }
+
         this.balance = balance.add(amount);
     }
 

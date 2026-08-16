@@ -1,6 +1,7 @@
 package com.nate.bankingsystemapi.service;
 
 import com.nate.bankingsystemapi.dto.account.AccountDto;
+import com.nate.bankingsystemapi.dto.account.LockedAccounts;
 import com.nate.bankingsystemapi.dto.account.PostAccountDto;
 import com.nate.bankingsystemapi.exception.AccountNotFoundException;
 import com.nate.bankingsystemapi.exception.UserNotFoundException;
@@ -46,13 +47,17 @@ public class AccountServiceTest {
     private PostAccountDto testPost;
     private User testUser;
     private Account testAccount;
+    private Account testAccount2;
+    private User testUser2;
 
 
 
     @BeforeEach
     void startUp(){
         testUser = new TestUser(1L,"Tester","test","hash-pass");
+        testUser2 = new TestUser(2L,"Tester2","test2","hash-pass");
         testAccount = new TestAccount(2L,testUser, CurrencyCode.ZAR);
+        testAccount2 = new TestAccount(3L,testUser2, CurrencyCode.ZAR);
         testAccount.credit(BigDecimal.valueOf(40000L));
         testPost = new PostAccountDto(CurrencyCode.ZAR.toString());
 
@@ -210,6 +215,81 @@ public class AccountServiceTest {
         }
 
 
+
+    }
+
+    @Nested
+    class testTransfer{
+        @Test
+        void testTransfer_Success(){
+            when(repoA.findByAccountNumForUpdate(testAccount.getAccountNum())).thenReturn(Optional.of(testAccount));
+            when(repoA.findByAccountNumForUpdate(testAccount2.getAccountNum())).thenReturn(Optional.of(testAccount2));
+
+            LockedAccounts accounts = service.transfer(testAccount.getAccountNum(),testAccount2.getAccountNum(),testUser.getId(),BigDecimal.valueOf(5000));
+
+            assertNotNull(accounts);
+
+            assertEquals(BigDecimal.valueOf(35000),testAccount.getBalance(),"should have that balance after deduction");
+            assertEquals(BigDecimal.valueOf(5000),testAccount2.getBalance(),"should have that balance after credit");
+
+            verify(repoA).findByAccountNumForUpdate(testAccount.getAccountNum());
+            verify(repoA).findByAccountNumForUpdate(testAccount2.getAccountNum());
+
+        }
+
+        @Test
+        void shouldFailTransfer_FromAccountNumNull(){
+
+            assertThrows(IllegalArgumentException.class,()->{
+                service.transfer(null,testAccount2.getAccountNum(),testUser.getId(),BigDecimal.valueOf(5000));
+            });
+        }
+
+        @Test
+        void shouldFailTransfer_ToAccountNumNull(){
+
+            assertThrows(IllegalArgumentException.class,()->{
+                service.transfer(testAccount.getAccountNum(),null,testUser.getId(),BigDecimal.valueOf(5000));
+            });
+        }
+
+
+        @Test
+        void shouldFailTransfer_TransferToSameAccount(){
+
+            assertThrows(IllegalArgumentException.class,()->{
+                service.transfer(testAccount.getAccountNum(),testAccount.getAccountNum(),testUser.getId(),BigDecimal.valueOf(5000));
+            });
+        }
+
+        @Test
+        void shouldFailTransfer_FromAccountNotFound(){
+
+            assertThrows(AccountNotFoundException.class,()->{
+                service.transfer(testAccount.getAccountNum(),testAccount2.getAccountNum(),testUser.getId(),BigDecimal.valueOf(5000));
+            });
+        }
+
+        @Test
+        void shouldFailTransfer_ToAccountNotFound(){
+            when(repoA.findByAccountNumForUpdate(testAccount.getAccountNum())).thenReturn(Optional.of(testAccount));
+            assertThrows(AccountNotFoundException.class,()->{
+                service.transfer(testAccount.getAccountNum(),15236486626L,testUser.getId(),BigDecimal.valueOf(5000));
+            });
+        }
+
+        @Test
+        void shouldFailTransfer_AccessDenied(){
+            User invalidUser = new TestUser(33L,"Invalid","invalidTester","hash-pass");
+            Account account = new TestAccount(55L,invalidUser,CurrencyCode.ZAR);
+
+            when(repoA.findByAccountNumForUpdate(account.getAccountNum())).thenReturn(Optional.of(account));
+            when(repoA.findByAccountNumForUpdate(testAccount2.getAccountNum())).thenReturn(Optional.of(testAccount2));
+
+            assertThrows(AccessDeniedException.class,()->{
+                service.transfer(account.getAccountNum(),testAccount2.getAccountNum(),testUser.getId(),BigDecimal.valueOf(5000));
+            });
+        }
 
     }
 

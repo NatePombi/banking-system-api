@@ -3,6 +3,7 @@ package com.nate.bankingsystemapi.controller.transaction;
 import com.nate.bankingsystemapi.dto.transaction.FundsRequest;
 import com.nate.bankingsystemapi.dto.transaction.TransactionDto;
 import com.nate.bankingsystemapi.dto.transaction.TransferRequest;
+import com.nate.bankingsystemapi.model.user.entity.User;
 import com.nate.bankingsystemapi.service.transaction.ITransactionService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -34,8 +35,8 @@ public class TransactionController {
             @ApiResponse(responseCode = "404", description = "Account Not found")
     })
     @PostMapping("/transfer")
-    public ResponseEntity<TransactionDto> transfer(@RequestBody @Valid TransferRequest request, @AuthenticationPrincipal(expression = "username") String username) throws Exception {
-           return ResponseEntity.ok().body(service.transfer(request,username));
+    public ResponseEntity<TransactionDto> transfer(@RequestBody @Valid TransferRequest request, @AuthenticationPrincipal User user) throws Exception {
+           return ResponseEntity.ok().body(service.transfer(request, user.getUsername(),user.getId()));
 
 
 
@@ -51,8 +52,8 @@ public class TransactionController {
             @ApiResponse(responseCode = "404", description = "Account Not found")
     })
     @PostMapping("/deposit")
-    public ResponseEntity<String> depositFunds(@RequestBody @Valid FundsRequest req, @AuthenticationPrincipal(expression = "username") String username) throws Exception {
-           return ResponseEntity.ok(service.depositFunds(req,username));
+    public ResponseEntity<String> depositFunds(@RequestBody @Valid FundsRequest req, @AuthenticationPrincipal User user) throws Exception {
+           return ResponseEntity.ok(service.depositFunds(req,user.getUsername(),user.getId()));
 
     }
 
@@ -65,8 +66,8 @@ public class TransactionController {
             @ApiResponse(responseCode = "404", description = "Account Not found")
     })
     @PostMapping("/withdraw")
-    public ResponseEntity<String> withdrawFunds(@RequestBody @Valid FundsRequest req, @AuthenticationPrincipal(expression = "username") String username) throws Exception {
-            return  ResponseEntity.ok().body(service.withdrawFunds(req, username));
+    public ResponseEntity<String> withdrawFunds(@RequestBody @Valid FundsRequest req, @AuthenticationPrincipal User user) throws Exception {
+            return  ResponseEntity.ok().body(service.withdrawFunds(req, user.getUsername(),user.getId()));
 
     }
 }
