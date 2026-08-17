@@ -1,7 +1,9 @@
 package com.nate.bankingsystemapi.service.account;
 
 import com.nate.bankingsystemapi.dto.account.AccountDto;
+import com.nate.bankingsystemapi.dto.account.LockedAccounts;
 import com.nate.bankingsystemapi.dto.account.PostAccountDto;
+import com.nate.bankingsystemapi.dto.transaction.TransferRequest;
 import com.nate.bankingsystemapi.exception.AccountNotFoundException;
 import com.nate.bankingsystemapi.exception.UserNotFoundException;
 import com.nate.bankingsystemapi.mapper.AccountMapper;
@@ -20,6 +22,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
+
+import java.math.BigDecimal;
 
 @Service
 @RequiredArgsConstructor
@@ -240,6 +244,71 @@ public class AccountService implements IAccountService {
 
         log.info("Successfully retrieved Account for admin");
         return AccountMapper.toDto(account);
+    }
+
+    public LockedAccounts transfer(Long fromAccountNum, Long toAccountNum, Long authenticatedUserId, BigDecimal amount){
+
+        validateAccounts(fromAccountNum,toAccountNum);
+
+        Long account1 = Math.min(fromAccountNum,toAccountNum);
+        Long account2 = Math.max(fromAccountNum,toAccountNum);
+
+
+        Account accountA = repo.findByAccountNumForUpdate(account1).orElseThrow(AccountNotFoundException::new);
+        Account accountB = repo.findByAccountNumForUpdate(account2).orElseThrow(AccountNotFoundException::new);
+
+        Account fromAccount = account1.equals(fromAccountNum)?accountA:accountB;
+        Account toAccount = account2.equals(fromAccountNum)?accountA:accountB;
+
+        if(!fromAccount.getUser().getId().equals(authenticatedUserId)){
+            throw new AccessDeniedException("Unauthorized access to this account");
+        }
+
+        fromAccount.debit(amount);
+        toAccount.credit(amount);
+
+        return new LockedAccounts(fromAccount,toAccount);
+    }
+
+    public Account deposit(Long accountNum,Long authenticatedUserId, BigDecimal amount){
+        validateAccount(accountNum);
+
+        Account account = repo.findByAccountNumAndUserId(accountNum,authenticatedUserId).orElseThrow(AccountNotFoundException::new);
+
+        account.credit(amount);
+
+        return account;
+    }
+
+    public Account withdraw(Long accountNum,Long authenticatedUserId, BigDecimal amount){
+        validateAccount(accountNum);
+
+        Account account = repo.findByAccountNumAndUserId(accountNum,authenticatedUserId).orElseThrow(AccountNotFoundException::new);
+
+        account.debit(amount);
+
+        return account;
+    }
+
+    private void validateAccounts(Long fromAccountNum, Long toAccountNum) {
+
+        if(fromAccountNum == null){
+            throw new IllegalArgumentException("From account is required");
+        }
+
+        if(toAccountNum == null){
+            throw new IllegalArgumentException("To account is required");
+        }
+
+        if(fromAccountNum.equals(toAccountNum)){
+            throw new IllegalArgumentException("Cannot transfer to the same account");
+        }
+    }
+
+    private void validateAccount(Long accountNum){
+        if(accountNum == null){
+            throw new IllegalArgumentException("Account number is required");
+        }
     }
 
     private User findUser(String username){

@@ -1,5 +1,6 @@
 package com.nate.bankingsystemapi.service;
 
+import com.nate.bankingsystemapi.dto.account.LockedAccounts;
 import com.nate.bankingsystemapi.dto.transaction.FundsRequest;
 import com.nate.bankingsystemapi.dto.transaction.TransactionDto;
 import com.nate.bankingsystemapi.dto.transaction.TransferRequest;
@@ -14,6 +15,7 @@ import com.nate.bankingsystemapi.model.transaction.entity.Transactions;
 import com.nate.bankingsystemapi.model.user.entity.TestUser;
 import com.nate.bankingsystemapi.model.user.entity.User;
 import com.nate.bankingsystemapi.repository.*;
+import com.nate.bankingsystemapi.service.account.AccountService;
 import com.nate.bankingsystemapi.service.audit.AuditService;
 import com.nate.bankingsystemapi.service.ledger.LedgerService;
 import com.nate.bankingsystemapi.service.transaction.TransactionCreationService;
@@ -42,10 +44,6 @@ public class TransactionsServiceTest {
     @Mock
     private TransactionRepository repoT;
     @Mock
-    private UserRepository repoU;
-    @Mock
-    private AccountRepository repoA;
-    @Mock
     private AuditLogRepository repoAL;
     @Mock
     private LedgerEntryRepository repoL;
@@ -57,6 +55,8 @@ public class TransactionsServiceTest {
     private TransactionFailureService transactionFailureService;
     @Mock
     private TransactionCreationService transactionCreationService;
+    @Mock
+    private AccountService accountService;
     @InjectMocks
     private TransactionService service;
 
@@ -84,109 +84,31 @@ public class TransactionsServiceTest {
     class Transfer {
         @Test
         void testTransfer_Success() {
-            when(repoU.findByUsername(testUser.getUsername())).thenReturn(Optional.of(testUser));
             when(transactionCreationService.createTransaction(reqID)).thenReturn(testTransaction);
-            when(repoA.findByAccountNumForUpdate(testAccount.getAccountNum())).thenReturn(Optional.of(testAccount));
-            when(repoA.findByAccountNumForUpdate(testAccount2.getAccountNum())).thenReturn(Optional.of(testAccount2));
-            when(repoA.saveAll(any())).thenReturn(List.of());
+            when(accountService.transfer(testAccount.getAccountNum(),testAccount2.getAccountNum(),testUser.getId(),BigDecimal.valueOf(5000))).thenReturn(new LockedAccounts(testAccount,testAccount2));
 
+            TransferRequest transferRequest = new TransferRequest(testAccount.getAccountNum(),testAccount2.getAccountNum(),BigDecimal.valueOf(5000),reqID);
 
-            TransferRequest transfer = new TransferRequest(testAccount.getAccountNum(),testAccount2.getAccountNum(),BigDecimal.valueOf(5000),reqID);
-
-            TransactionDto dto = service.transfer(transfer,"test");
+            TransactionDto dto = service.transfer(transferRequest,testUser.getUsername(),testUser.getId());
 
             assertNotNull(dto);
-            assertEquals(BigDecimal.valueOf(5000), testAccount.getBalance(), "should decreased by the amount transferred");
-            assertEquals(BigDecimal.valueOf(5000), testAccount2.getBalance(), "should be increased by amount transferred");
 
-//            verify(repoT, atLeast(1)).save(any(Transactions.class));
+            verify(transactionCreationService).createTransaction(reqID);
+
+            verify(accountService).transfer(testAccount.getAccountNum(),testAccount2.getAccountNum(),testUser.getId(),BigDecimal.valueOf(5000));
+
         }
 
         @Test
         void shouldFailTransferDuplicateRequest() {
-            when(repoU.findByUsername(testUser.getUsername())).thenReturn(Optional.of(testUser));
             when(transactionCreationService.createTransaction(reqID)).thenThrow(new DuplicateRequestException("Request already processed"));
             TransferRequest transferRequest = new TransferRequest(testAccount.getAccountNum(),testAccount2.getAccountNum(),BigDecimal.valueOf(5000),reqID);
 
             assertThrows(DuplicateRequestException.class,()->{
-                service.transfer(transferRequest,"test");
+                service.transfer(transferRequest,"test",testUser.getId());
             });
         }
 
-        @Test
-        void testTransfer_FailSendingToSameAccount(){
-            TransferRequest transfer = new TransferRequest(testAccount.getAccountNum(),testAccount.getAccountNum(),BigDecimal.valueOf(5000),reqID);
-
-            assertThrows(RuntimeException.class,()->{
-                service.transfer(transfer,"test");
-            });
-        }
-
-        @Test
-        void testTransfer_FailUserNotFound(){
-            TransferRequest transfer = new TransferRequest(testAccount.getAccountNum(),testAccount2.getAccountNum(),BigDecimal.valueOf(5000),reqID);
-
-            Exception ex = assertThrows(UserNotFoundException.class,()->{
-                service.transfer(transfer,"invalid");
-            });
-
-            assertTrue(ex.getMessage().contains("invalid"));
-        }
-
-        @Test
-        void testTransfer_FailFromAccountNotFound(){
-            when(repoU.findByUsername(testUser.getUsername())).thenReturn(Optional.of(testUser));
-            when(transactionCreationService.createTransaction(reqID)).thenReturn(testTransaction);
-            TransferRequest transfer = new TransferRequest(123567890L,testAccount2.getAccountNum(),BigDecimal.valueOf(5000),reqID);
-
-
-            Exception ex = assertThrows(AccountNotFoundException.class,()->{
-                service.transfer(transfer,"test");
-            });
-
-        }
-
-        @Test
-        void testTransfer_FailToAccountNotFound(){
-            when(repoU.findByUsername(testUser.getUsername())).thenReturn(Optional.of(testUser));
-            when(transactionCreationService.createTransaction(reqID)).thenReturn(testTransaction);
-            TransferRequest transfer = new TransferRequest(testAccount.getAccountNum(),987654321L,BigDecimal.valueOf(5000),reqID);
-
-
-            Exception ex = assertThrows(AccountNotFoundException.class,()->{
-                service.transfer(transfer,"test");
-            });
-
-        }
-
-        @Test
-        void testTransfer_FailUnauthorizedAccess(){
-            User notOwner = new TestUser(12L,"Mark","mark","hashed");
-            when(repoU.findByUsername(notOwner.getUsername())).thenReturn(Optional.of(notOwner));
-            when(transactionCreationService.createTransaction(reqID)).thenReturn(testTransaction);
-            when(repoA.findByAccountNumForUpdate(testAccount.getAccountNum())).thenReturn(Optional.of(testAccount));
-            when(repoA.findByAccountNumForUpdate(testAccount2.getAccountNum())).thenReturn(Optional.of(testAccount2));
-            TransferRequest transfer = new TransferRequest(testAccount.getAccountNum(),testAccount2.getAccountNum(),BigDecimal.valueOf(5000),reqID);
-
-
-            assertThrows(AccessDeniedException.class,()->{
-                service.transfer(transfer,notOwner.getUsername());
-            });
-        }
-
-        @Test
-        void testTransfer_FailInsufficientFunds(){
-            when(repoU.findByUsername(testUser.getUsername())).thenReturn(Optional.of(testUser));
-            when(repoA.findByAccountNumForUpdate(testAccount.getAccountNum())).thenReturn(Optional.of(testAccount));
-            when(repoA.findByAccountNumForUpdate(testAccount2.getAccountNum())).thenReturn(Optional.of(testAccount2));
-            when(transactionCreationService.createTransaction(reqID)).thenReturn(testTransaction);
-
-            TransferRequest transfer = new TransferRequest(testAccount.getAccountNum(),testAccount2.getAccountNum(),BigDecimal.valueOf(500000),reqID);
-
-            assertThrows(InsufficientAmountException.class,()->{
-                service.transfer(transfer,"test");
-            });
-        }
     }
 
     @Nested
@@ -195,50 +117,29 @@ public class TransactionsServiceTest {
         @Test
         void testDepositFunds_Success(){
             BigDecimal amount = BigDecimal.valueOf(4000);
-            BigDecimal prevBalance = testAccount.getBalance();
             FundsRequest req = new FundsRequest(testAccount.getAccountNum(),amount,reqID);
-            when(repoU.findByUsername(testUser.getUsername())).thenReturn(Optional.of(testUser));
             when(transactionCreationService.createTransaction(reqID)).thenReturn(testTransaction);
-            when(repoA.findByAccountNumForUpdate(testAccount.getAccountNum())).thenReturn(Optional.of(testAccount));
+            when(accountService.deposit(testAccount.getAccountNum(),testUser.getId(),amount)).thenReturn(testAccount);
 
-            service.depositFunds(req,"test");
+            String response = service.depositFunds(req,"test",testUser.getId());
 
-            assertEquals(amount.add(prevBalance), testAccount.getBalance(),"current balance should be the sum of previous balance and amount deposited");
-        }
+            assertNotNull(response);
 
-        @Test
-        void testDepositFunds_FailUserNotFound(){
-            FundsRequest req = new FundsRequest(testAccount.getAccountNum(),BigDecimal.valueOf(3000),reqID);
-            Exception ex = assertThrows(UserNotFoundException.class,()->{
-                service.depositFunds(req,"invalid");
-            });
-
-            assertTrue(ex.getMessage().contains("invalid"));
-        }
-
-        @Test
-        void testDepositFunds_FailAccountNotFound(){
-            FundsRequest req = new FundsRequest(3654897L,BigDecimal.valueOf(3000),reqID);
-            when(repoU.findByUsername(testUser.getUsername())).thenReturn(Optional.of(testUser));
-            when(transactionCreationService.createTransaction(reqID)).thenReturn(testTransaction);
-            assertThrows(AccountNotFoundException.class,()->{
-                service.depositFunds(req,"test");
-            });
+            verify(transactionCreationService).createTransaction(reqID);
+            verify(accountService).deposit(testAccount.getAccountNum(),testUser.getId(),amount);
 
         }
 
         @Test
-        void testDepositFund_FailAccessDenied(){
-            User testUser1 = User.createUser("Mark","marky","hashed-password");
-            FundsRequest req = new FundsRequest(testAccount.getAccountNum(),BigDecimal.valueOf(3000),reqID);
-            when(transactionCreationService.createTransaction(reqID)).thenReturn(testTransaction);
-            when(repoU.findByUsername(testUser1.getUsername())).thenReturn(Optional.of(testUser1));
-            when(repoA.findByAccountNumForUpdate(testAccount.getAccountNum())).thenReturn(Optional.of(testAccount));
+        void shouldFailWithdrawDuplicateRequest() {
+            when(transactionCreationService.createTransaction(reqID)).thenThrow(new DuplicateRequestException("Request already processed"));
+            FundsRequest req = new FundsRequest(testAccount.getAccountNum(),BigDecimal.valueOf(5000),reqID);
 
-            assertThrows(AccessDeniedException.class,()->{
-                service.depositFunds(req,testUser1.getUsername());
+            assertThrows(DuplicateRequestException.class,()->{
+                service.depositFunds(req,"test",testUser.getId());
             });
         }
+
     }
 
 
@@ -248,68 +149,32 @@ public class TransactionsServiceTest {
         @Test
         void testWithdrawFunds_Success(){
             BigDecimal amount = BigDecimal.valueOf(200);
-            BigDecimal prevBalance = testAccount.getBalance();
             FundsRequest req = new FundsRequest(testAccount.getAccountNum(),amount,reqID);
-            when(repoU.findByUsername(testUser.getUsername())).thenReturn(Optional.of(testUser));
-            when(repoA.findByAccountNumForUpdate(testAccount.getAccountNum())).thenReturn(Optional.of(testAccount));
             when(transactionCreationService.createTransaction(reqID)).thenReturn(testTransaction);
+            when(accountService.withdraw(testAccount.getAccountNum(),testUser.getId(),amount)).thenReturn(testAccount);
 
-            service.withdrawFunds(req,"test");
 
-            assertEquals(prevBalance.subtract(amount),testAccount.getBalance(),"the current balance should be the difference between the previous balance and the amount");
+            String response = service.withdrawFunds(req,"test",testUser.getId());
+
+            assertNotNull(response);
+
+            verify(transactionCreationService).createTransaction(reqID);
+            verify(accountService).withdraw(testAccount.getAccountNum(),testUser.getId(),amount);
         }
+
+
 
 
         @Test
-        void testWithdrawFunds_FailInsufficientFunds(){
-            FundsRequest req = new FundsRequest(testAccount.getAccountNum(),BigDecimal.valueOf(20000),reqID);
-            when(repoU.findByUsername(testUser.getUsername())).thenReturn(Optional.of(testUser));
-            when(transactionCreationService.createTransaction(reqID)).thenReturn(testTransaction);
-            when(repoA.findByAccountNumForUpdate(testAccount.getAccountNum())).thenReturn(Optional.of(testAccount));
-            assertThrows(InsufficientAmountException.class,()->{
-                service.withdrawFunds(req,"test");
+        void shouldFailWithdrawDuplicateRequest() {
+            when(transactionCreationService.createTransaction(reqID)).thenThrow(new DuplicateRequestException("Request already processed"));
+            FundsRequest req = new FundsRequest(testAccount.getAccountNum(),BigDecimal.valueOf(5000),reqID);
+
+            assertThrows(DuplicateRequestException.class,()->{
+                service.withdrawFunds(req,"test",testUser.getId());
             });
         }
 
-
-        @Test
-        void testWithdrawFunds_FailUserNotFound(){
-            FundsRequest req = new FundsRequest(testAccount.getAccountNum(),BigDecimal.valueOf(2000),reqID);
-
-            Exception ex = assertThrows(UserNotFoundException.class, ()->{
-                service.withdrawFunds(req,"invalid");
-            });
-
-            assertTrue(ex.getMessage().contains("invalid"));
-        }
-
-
-        @Test
-        void testWithdrawFunds_FailAccountNotFound(){
-            FundsRequest req = new FundsRequest(987654321L,BigDecimal.valueOf(2000),reqID);
-            when(repoU.findByUsername(testUser.getUsername())).thenReturn(Optional.of(testUser));
-            when(transactionCreationService.createTransaction(reqID)).thenReturn(testTransaction);
-
-
-            assertThrows(AccountNotFoundException.class, ()->{
-                service.withdrawFunds(req,"test");
-            });
-
-        }
-
-
-        @Test
-        void testWithdrawFund_FailAccessDenied(){
-            User testUser1 = User.createUser("Mark","marky","hashed-password");
-            FundsRequest req = new FundsRequest(testAccount.getAccountNum(),BigDecimal.valueOf(3000),reqID);
-            when(transactionCreationService.createTransaction(reqID)).thenReturn(testTransaction);
-            //when(repoT.save(any(Transactions.class))).thenReturn(testTransaction);
-            when(repoU.findByUsername(testUser1.getUsername())).thenReturn(Optional.of(testUser1));
-            when(repoA.findByAccountNumForUpdate(testAccount.getAccountNum())).thenReturn(Optional.of(testAccount));
-            assertThrows(AccessDeniedException.class,()->{
-                service.withdrawFunds(req,testUser1.getUsername());
-            });
-        }
     }
 
 }
